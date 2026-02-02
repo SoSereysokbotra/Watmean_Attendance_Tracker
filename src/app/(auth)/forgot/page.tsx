@@ -3,9 +3,36 @@
 import Link from "next/link";
 import { Mail, ArrowRight, ArrowLeft, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { AuthLayout } from "../../../components/auth/AuthLayout";
+import { AuthInput } from "../../../components/ui/AuthInput";
+import { FormError } from "../../../components/ui/FormError";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [globalError, setGlobalError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState({
+    email: "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setGlobalError("");
+    setFieldErrors({ email: "" });
+    // Handle reset logic here
+    let hasError = false;
+    if (!email) {
+      setFieldErrors({ email: "Email is required" });
+      return;
+    }
+    if (hasError) return;
+
+    router.push("../verify");
+  };
+
   return (
     <AuthLayout
       rightSideTitle="Locked out?"
@@ -44,40 +71,30 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {/* Form Section */}
-        <form
-          className="space-y-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            // Handle reset logic here
-          }}
-        >
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              University Email
-            </label>
-            <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-brand-primary transition-colors" />
-              <input
-                id="email"
-                type="email"
-                placeholder="name@university.edu"
-                required
-                className="flex h-11 w-full rounded-xl border border-input bg-card px-10 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary transition-all"
-              />
-            </div>
-          </div>
+        <div className="pt-4">
+          <ErrorAlert message={globalError} />
+        </div>
 
-          <button
-            type="submit"
-            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
-          >
-            Reset Password
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
+        {/* Form Section */}
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <AuthInput
+              label="University Email"
+              icon={Mail}
+              type="email"
+              placeholder="name@university.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <FormError message={fieldErrors.email} />
+          </div>
+            <button
+              type="submit"
+              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
+            >
+              Reset Password
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </button>
         </form>
 
         {/* Help Footer */}

@@ -13,10 +13,12 @@ import { motion } from "framer-motion";
 
 import { AuthLayout } from "../../../components/auth/AuthLayout";
 import { OTPInput } from "../../../components/auth/OTPInput";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 
 export default function SignupVerifyPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
+  const [globalError, setGlobalError] = useState<string>("");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -29,6 +31,7 @@ export default function SignupVerifyPage() {
   const handleResend = () => {
     if (timer === 0) {
       setTimer(30);
+      setGlobalError(""); // Clear error on resend
       // Add your resend logic here
     }
   };
@@ -75,18 +78,23 @@ export default function SignupVerifyPage() {
           </p>
         </div>
 
+        <div className="pt-4">
+          <ErrorAlert message={globalError} />
+        </div>
+
         {/* Form */}
         <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
           <OTPInput value={otp} onChange={setOtp} />
-
-          <button
-            type="submit"
-            disabled={otp.some((digit) => digit === "")}
-            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            Create Account
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          <Link href="/login">
+            <button
+              type="submit"
+              disabled={otp.some((digit) => digit === "")}
+              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              Verify
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </Link>
         </form>
 
         {/* Resend Logic */}

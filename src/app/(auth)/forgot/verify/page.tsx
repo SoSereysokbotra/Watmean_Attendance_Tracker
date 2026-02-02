@@ -13,10 +13,12 @@ import { motion } from "framer-motion";
 
 import { AuthLayout } from "../../../../components/auth/AuthLayout";
 import { OTPInput } from "../../../../components/auth/OTPInput";
+import { ErrorAlert } from "../../../../components/ui/ErrorAlert";
 
 export default function VerifyResetCodePage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
+  const [globalError, setGlobalError] = useState<string>("");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -70,6 +72,10 @@ export default function VerifyResetCodePage() {
           </p>
         </div>
 
+        <div className="pt-4">
+          <ErrorAlert message={globalError} />
+        </div>
+
         {/* Form */}
         <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
           <OTPInput value={otp} onChange={setOtp} />
@@ -95,7 +101,10 @@ export default function VerifyResetCodePage() {
             </span>
           ) : (
             <button
-              onClick={() => setTimer(30)}
+              onClick={() => {
+                setTimer(30);
+                setGlobalError("");
+              }}
               className="text-sm font-semibold text-brand-primary hover:underline transition-all"
             >
               Click to resend

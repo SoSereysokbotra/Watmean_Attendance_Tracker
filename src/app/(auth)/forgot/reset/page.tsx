@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AuthLayout } from "../../../../components/auth/AuthLayout";
+import { ErrorAlert } from "../../../../components/ui/ErrorAlert";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [globalError, setGlobalError] = useState<string>("");
 
   // Validation Logic
   const hasLength = password.length >= 8;
@@ -25,6 +27,14 @@ export default function ResetPasswordPage() {
   const isMatch = password.length > 0 && password === confirmPassword;
 
   const canSubmit = hasLength && hasNumber && hasSpecial && isMatch;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setGlobalError("");
+    // Handle reset logic
+    // setGlobalError("Failed to reset password. Please try again.");
+  };
 
   return (
     <AuthLayout
@@ -58,7 +68,11 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+        <div className="pt-4">
+          <ErrorAlert message={globalError} />
+        </div>
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
           {/* New Password Field */}
           <div className="space-y-2">
             <label className="text-sm font-medium">New Password</label>

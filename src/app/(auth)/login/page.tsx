@@ -6,8 +6,23 @@ import { motion } from "framer-motion";
 
 import { AuthLayout } from "../../../components/auth/AuthLayout";
 import { AuthInput } from "../../../components/ui/AuthInput";
+import { FormError } from "../../../components/ui/FormError";
+import { ErrorAlert } from "../../../components/ui/ErrorAlert";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [globalError, setGlobalError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement actual login logic
+    setGlobalError("Invalid credentials.");
+  };
+
   return (
     <AuthLayout>
       <motion.div
@@ -24,30 +39,40 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="space-y-5">
+        <div className="pt-4">
+          <ErrorAlert message={globalError} />
+        </div>
+
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {/* Email Input */}
-          <AuthInput
-            label="Email address"
-            icon={Mail}
-            type="email"
-            placeholder="name@university.edu"
-          />
+          <div className="space-y-1">
+            <AuthInput
+              label="Email address"
+              icon={Mail}
+              type="email"
+              placeholder="name@university.edu"
+            />
+            <FormError message={fieldErrors.email} />
+          </div>
 
           {/* Password Input with "Forgot Password" link */}
-          <AuthInput
-            label="Password"
-            icon={Lock}
-            type="password"
-            placeholder="••••••••"
-            rightElement={
-              <Link
-                href="/forgot"
-                className="text-sm font-medium text-brand-primary hover:underline underline-offset-4 transition-colors"
-              >
-                Forgot password?
-              </Link>
-            }
-          />
+          <div className="space-y-1">
+            <AuthInput
+              label="Password"
+              icon={Lock}
+              type="password"
+              placeholder="••••••••"
+              rightElement={
+                <Link
+                  href="/forgot"
+                  className="text-sm font-medium text-brand-primary hover:underline underline-offset-4 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              }
+            />
+            <FormError message={fieldErrors.password} />
+          </div>
 
           {/* Remember Me Checkbox */}
           <div className="flex items-center gap-3">
@@ -57,7 +82,7 @@ export default function LoginPage() {
               className="h-4 w-4 rounded border-border bg-card text-brand-primary focus:ring-brand-primary/20"
             />
             <label htmlFor="remember" className="text-sm text-muted-foreground">
-              Remember me for 30 days
+              Remember me
             </label>
           </div>
 
