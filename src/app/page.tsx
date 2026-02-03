@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ModeToggle } from "../components/mode-toggle";
 import { motion, Variants } from "framer-motion";
+import { BlurReveal } from "../components/ui/blur-reveal";
 import {
   MapPin,
   ShieldCheck,
@@ -11,7 +12,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Smartphone,
-  Users,
+  Users,  
   Fingerprint,
   BarChart3,
 } from "lucide-react";
