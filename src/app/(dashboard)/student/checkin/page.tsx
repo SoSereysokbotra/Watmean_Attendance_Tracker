@@ -23,10 +23,9 @@ const createIcon = (color: string) =>
     iconAnchor: [8, 8],
   });
 
-const userIcon = createIcon("#3b82f6");
+const userIcon = createIcon("var(--brand-primary)");
 const targetIcon = createIcon("#ef4444");
 
-// Helper: Haversine Distance
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
@@ -41,7 +40,6 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return Math.round(R * c);
 }
 
-// Map Controller
 function MapController({
   centerOnUser,
   centerOnTarget,
@@ -67,7 +65,6 @@ export default function LiveMapView() {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Triggers
   const [triggerCenterUser, setTriggerCenterUser] = useState(0);
   const [triggerCenterTarget, setTriggerCenterTarget] = useState(0);
 
@@ -100,7 +97,7 @@ export default function LiveMapView() {
   }, []);
 
   return (
-    <div className="h-[calc(100vh-8rem)] bg-white rounded-2xl border border-brand-border shadow-sm overflow-hidden relative flex flex-col group">
+    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group">
       {/* Map Area */}
       <div className="flex-1 relative z-0">
         <MapContainer
@@ -132,7 +129,7 @@ export default function LiveMapView() {
               </Marker>
               <Polyline
                 positions={[position, targetLocation]}
-                color="blue"
+                color="var(--brand-primary)"
                 dashArray="5, 10"
               />
             </>
@@ -141,9 +138,9 @@ export default function LiveMapView() {
 
         {/* Loading Overlay */}
         {!position && !error && (
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3">
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3">
             <Loader2 className="animate-spin text-brand-primary" size={32} />
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm font-medium text-muted-foreground">
               Acquiring GPS Signal...
             </p>
           </div>
@@ -151,13 +148,13 @@ export default function LiveMapView() {
 
         {/* Top Bar */}
         <div className="absolute top-0 left-0 right-0 p-0.5 z-[1000]">
-          <div className="bg-white/80 backdrop-blur-md rounded-xl border border-gray-200 shadow-sm p-3">
+          <div className="bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-md font-bold text-slate-900">
+                <h2 className="text-md font-bold text-foreground">
                   Check In: Classroom 304
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   {new Date().toLocaleDateString("en-US", {
                     weekday: "long",
                     year: "numeric",
@@ -169,7 +166,7 @@ export default function LiveMapView() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setTriggerCenterUser(triggerCenterUser + 1)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
                 >
                   <MapPin size={16} />
                 </button>
@@ -177,7 +174,7 @@ export default function LiveMapView() {
                   onClick={() =>
                     setTriggerCenterTarget(triggerCenterTarget + 1)
                   }
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
                 >
                   <Target size={16} />
                 </button>
@@ -188,8 +185,8 @@ export default function LiveMapView() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="bg-white p-4 border-t border-gray-200 flex justify-between items-center z-[1000]">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+      <div className="bg-card p-4 border-t border-border flex justify-between items-center z-[1000]">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Info size={14} />
           <span>Distance: {distance ? `${distance}m` : "--"}</span>
         </div>
@@ -197,8 +194,8 @@ export default function LiveMapView() {
           disabled={!isWithinRange}
           className={`px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all ${
             isWithinRange
-              ? "bg-brand-primary text-white hover:bg-blue-700"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              ? "bg-brand-primary text-primary-foreground hover:bg-brand-primary/90"
+              : "bg-muted text-muted-foreground cursor-not-allowed"
           }`}
         >
           {isWithinRange ? "Check In Now" : "Move Closer"} <MapPin size={16} />

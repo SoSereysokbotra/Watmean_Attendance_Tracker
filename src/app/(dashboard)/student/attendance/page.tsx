@@ -1,26 +1,32 @@
-'use client'
+"use client";
 
 import React, { useState } from "react";
 import {
+  Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
   Download,
-  Calendar,
   MapPin,
   XCircle,
   AlertTriangle,
-  FileText, // Used for disputes
+  FileText,
   BookOpen,
   MoreHorizontal,
   Target,
-  HelpCircle, // Used for disputes
+  HelpCircle,
 } from "lucide-react";
+import { Calendar } from "../../../../components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../../../components/ui/popover";
+import { format } from "date-fns";
 
 export default function StudentAttendanceView() {
-  // 1. STATE: Track which tab is active
-  const [activeTab, setActiveTab] = useState("all"); // 'all', 'absent', 'disputed'
+  const [activeTab, setActiveTab] = useState("all");
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // 2. DATA: The raw data for the list
   const attendanceData = [
     {
       id: 1,
@@ -29,11 +35,11 @@ export default function StudentAttendanceView() {
       room: "Lecture Hall A",
       date: "Nov 14, 2023",
       time: "09:14 AM",
-      status: "Present", // Present, Late, Absent, Disputed
+      status: "Present",
       signal: "High",
       gps: "GPS Verified",
       icon: BookOpen,
-      colorClass: "indigo",
+      colorClass: "brand-primary",
     },
     {
       id: 2,
@@ -46,7 +52,7 @@ export default function StudentAttendanceView() {
       signal: "8m",
       gps: "Accuracy",
       icon: BookOpen,
-      colorClass: "indigo",
+      colorClass: "brand-primary",
     },
     {
       id: 3,
@@ -59,9 +65,8 @@ export default function StudentAttendanceView() {
       signal: "--",
       gps: "No Signal",
       icon: BookOpen,
-      colorClass: "indigo",
+      colorClass: "brand-primary",
     },
-    // New Record specific for "Disputes" tab
     {
       id: 4,
       course: "Art History 105",
@@ -77,7 +82,6 @@ export default function StudentAttendanceView() {
     },
   ];
 
-  // 3. FILTER LOGIC: Filter data based on activeTab
   const filteredData = attendanceData.filter((item) => {
     if (activeTab === "all") return true;
     if (activeTab === "absent") return item.status === "Absent";
@@ -85,7 +89,6 @@ export default function StudentAttendanceView() {
     return true;
   });
 
-  // Helper to map icons to summary labels (kept from your original code)
   const getIcon = (label: string, size: number = 20) => {
     switch (label) {
       case "Attendance Rate":
@@ -102,31 +105,50 @@ export default function StudentAttendanceView() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-gray-50/50 min-h-screen">
+    <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-screen">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-3xl font-bold text-foreground tracking-tight">
             My Attendance
           </h2>
-          <p className="text-slate-500 mt-2 font-medium">
+          <p className="text-muted-foreground mt-2 font-medium">
             Welcome back, Alex. You are currently on track for the semester.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all">
-            <Calendar size={16} /> History
-          </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 transition-all active:scale-95">
+          {/* WRAP THE BUTTON IN POPOVER */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all">
+                <CalendarIcon size={16} />
+                {/* Optional: Show selected date or just "History" */}
+                {date ? format(date, "PPP") : "History"}
+              </button>
+            </PopoverTrigger>
+
+            {/* THE CALENDAR CONTENT */}
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* DOWNLOAD BUTTON (Unchanged) */}
+          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95">
             <Download size={16} /> Download Log
           </button>
         </div>
       </div>
 
-      {/* Summary Section (Kept Original) */}
+      {/* Summary Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-8 relative">
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-100/30 blur-[100px] -z-10 rounded-full" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-rose-100/20 blur-[100px] -z-10 rounded-full" />
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-brand-primary/10 blur-[100px] -z-10 rounded-full" />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-rose-100/20 dark:bg-rose-900/10 blur-[100px] -z-10 rounded-full" />
 
         {[
           {
@@ -134,7 +156,7 @@ export default function StudentAttendanceView() {
             val: "94%",
             sub: "Semester Goal: 85%",
             trend: "Good",
-            color: "text-emerald-600",
+            color: "text-emerald-600 dark:text-emerald-400",
             accent: "bg-emerald-500",
           },
           {
@@ -142,7 +164,7 @@ export default function StudentAttendanceView() {
             val: "3",
             sub: "Total Sessions",
             trend: "Warning",
-            color: "text-rose-600",
+            color: "text-rose-600 dark:text-rose-400",
             accent: "bg-rose-500",
           },
           {
@@ -150,7 +172,7 @@ export default function StudentAttendanceView() {
             val: "2",
             sub: "Avg. 5 mins",
             trend: "Stable",
-            color: "text-amber-600",
+            color: "text-amber-600 dark:text-amber-400",
             accent: "bg-amber-500",
           },
           {
@@ -158,7 +180,7 @@ export default function StudentAttendanceView() {
             val: "1",
             sub: "Medical Leave",
             trend: "Approved",
-            color: "text-blue-600",
+            color: "text-blue-600 dark:text-blue-400",
             accent: "bg-blue-500",
           },
         ].map((stat) => (
@@ -171,22 +193,28 @@ export default function StudentAttendanceView() {
             />
             <div className="flex items-baseline gap-2">
               <h3
-                className={`text-5xl font-black tracking-tighter text-slate-900 group-hover:scale-105 transition-transform origin-left`}
+                className={`text-5xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform origin-left`}
               >
                 {stat.val}
               </h3>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${stat.trend === "Good" || stat.trend === "Approved" ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-slate-50 border-slate-100 text-slate-500"} border`}
+                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  stat.trend === "Good" || stat.trend === "Approved"
+                    ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400"
+                    : "bg-muted border-border text-muted-foreground"
+                } border`}
               >
                 {stat.trend}
               </span>
             </div>
             <div className="mt-2">
-              <p className="text-lg font-bold text-slate-800 tracking-wide uppercase text-[11px]">
+              <p className="text-lg font-bold text-foreground tracking-wide uppercase text-[11px]">
                 {stat.label}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm font-medium text-slate-500">{stat.sub}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {stat.sub}
+                </p>
               </div>
             </div>
             <div
@@ -199,31 +227,31 @@ export default function StudentAttendanceView() {
       </div>
 
       {/* Detailed Table Section */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white gap-4">
+      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card gap-4">
           <div>
-            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
               {activeTab === "disputed"
                 ? "Open Disputes"
                 : activeTab === "absent"
                   ? "Missed Classes"
                   : "My Recent Classes"}
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {activeTab === "disputed"
                 ? "Track the status of your attendance appeals"
                 : "Check your recent check-ins and signal validity"}
             </p>
           </div>
 
-          {/* TAB BUTTONS - Now Functional */}
-          <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-xl border border-slate-100">
+          {/* TAB BUTTONS */}
+          <div className="flex items-center gap-3 bg-muted p-1 rounded-xl border border-border">
             <button
               onClick={() => setActiveTab("all")}
               className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
                 activeTab === "all"
-                  ? "bg-white text-slate-800 border-slate-200 shadow-sm"
-                  : "bg-transparent text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                  ? "bg-card text-foreground border-border shadow-sm"
+                  : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
               }`}
             >
               All Records
@@ -232,8 +260,8 @@ export default function StudentAttendanceView() {
               onClick={() => setActiveTab("absent")}
               className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
                 activeTab === "absent"
-                  ? "bg-white text-slate-800 border-slate-200 shadow-sm"
-                  : "bg-transparent text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                  ? "bg-card text-foreground border-border shadow-sm"
+                  : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
               }`}
             >
               Absences
@@ -242,8 +270,8 @@ export default function StudentAttendanceView() {
               onClick={() => setActiveTab("disputed")}
               className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
                 activeTab === "disputed"
-                  ? "bg-white text-slate-800 border-slate-200 shadow-sm"
-                  : "bg-transparent text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100"
+                  ? "bg-card text-foreground border-border shadow-sm"
+                  : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
               }`}
             >
               Disputes
@@ -252,7 +280,7 @@ export default function StudentAttendanceView() {
         </div>
 
         {/* Table Header */}
-        <div className="grid grid-cols-12 px-8 py-4 bg-slate-50/50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <div className="grid grid-cols-12 px-8 py-4 bg-muted/50 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
           <div className="col-span-12 md:col-span-4 pl-2">Course Info</div>
           <div className="hidden md:block col-span-3">Check-in Time</div>
           <div className="hidden md:block col-span-3">My Signal</div>
@@ -261,166 +289,190 @@ export default function StudentAttendanceView() {
           </div>
         </div>
 
-        {/* Rows - Now Dynamic */}
-        <div className="divide-y divide-slate-100">
+        {/* Rows */}
+        <div className="divide-y divide-border/50">
           {filteredData.length === 0 ? (
-            <div className="p-12 text-center text-slate-400">
+            <div className="p-12 text-center text-muted-foreground">
               <p>No records found for this filter.</p>
             </div>
           ) : (
-            filteredData.map((record) => (
-              <div
-                key={record.id}
-                className="grid grid-cols-12 px-8 py-5 items-center hover:bg-slate-50/50 transition-colors group cursor-pointer"
-              >
-                {/* Column 1: Course Info */}
-                <div className="col-span-12 md:col-span-4 flex items-center gap-4">
-                  <div
-                    className={`h-12 w-12 rounded-2xl bg-${record.colorClass}-50 border border-${record.colorClass}-100 flex items-center justify-center text-${record.colorClass}-600 shrink-0 group-hover:bg-${record.colorClass}-600 group-hover:text-white transition-all duration-300`}
-                  >
-                    <record.icon size={20} />
-                  </div>
-                  <div>
-                    <p
-                      className={`font-bold text-slate-800 text-base group-hover:text-${record.colorClass}-600 transition-colors`}
-                    >
-                      {record.course}
-                    </p>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      {record.room} • {record.prof}
-                    </p>
-                  </div>
-                </div>
+            filteredData.map((record) => {
+              const bgColor =
+                record.colorClass === "brand-primary"
+                  ? "bg-brand-primary/10 border-brand-primary/20 text-brand-primary"
+                  : "bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800/30 dark:text-blue-400";
 
-                {/* Column 2: Time */}
-                <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-slate-700">
-                      {record.date}
-                    </span>
-                    <span
-                      className={`text-xs flex items-center gap-1.5 mt-1 font-medium ${
-                        record.status === "Present"
-                          ? "text-slate-500"
-                          : record.status === "Late"
-                            ? "text-amber-600 font-bold"
-                            : record.status === "Disputed"
-                              ? "text-blue-600 font-bold"
-                              : "text-rose-500"
-                      }`}
-                    >
-                      {record.status === "Present" && (
-                        <CheckCircle2 size={12} className="text-emerald-500" />
-                      )}
-                      {record.status === "Late" && <Clock size={12} />}
-                      {record.status === "Absent" && <XCircle size={12} />}
-                      {record.status === "Disputed" && <HelpCircle size={12} />}
-                      {record.status === "Disputed"
-                        ? "Details Sent"
-                        : record.status === "Absent"
-                          ? "No Check-in"
-                          : `Checked in: ${record.time}`}
-                    </span>
-                  </div>
-                </div>
+              const hoverBgColor =
+                record.colorClass === "brand-primary"
+                  ? "group-hover:bg-brand-primary group-hover:text-primary-foreground"
+                  : "group-hover:bg-blue-600 group-hover:text-primary-foreground";
 
-                {/* Column 3: Signal/GPS */}
-                <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
-                  <div className="flex items-center gap-3">
+              const hoverTextColor =
+                record.colorClass === "brand-primary"
+                  ? `group-hover:text-brand-primary`
+                  : `group-hover:text-blue-600`;
+
+              return (
+                <div
+                  key={record.id}
+                  className="grid grid-cols-12 px-8 py-5 items-center hover:bg-muted/50 transition-colors group cursor-pointer"
+                >
+                  {/* Column 1: Course Info */}
+                  <div className="col-span-12 md:col-span-4 flex items-center gap-4">
                     <div
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                        record.status === "Disputed"
-                          ? "bg-blue-50 border-blue-100"
-                          : record.status === "Absent"
-                            ? "bg-rose-50 border-rose-100"
-                            : "bg-slate-100 border-slate-200"
-                      }`}
+                      className={`h-12 w-12 rounded-2xl ${bgColor} border flex items-center justify-center shrink-0 transition-all duration-300 ${hoverBgColor}`}
                     >
-                      <MapPin
-                        size={14}
-                        className={
-                          record.status === "Present"
-                            ? "text-emerald-500"
-                            : record.status === "Disputed"
-                              ? "text-blue-500"
-                              : record.status === "Absent"
-                                ? "text-rose-400"
-                                : "text-slate-500"
-                        }
-                      />
+                      <record.icon size={20} />
+                    </div>
+                    <div>
+                      <p
+                        className={`font-bold text-foreground text-base transition-colors ${hoverTextColor}`}
+                      >
+                        {record.course}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                        {record.room} • {record.prof}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Time */}
+                  <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-foreground">
+                        {record.date}
+                      </span>
                       <span
-                        className={`text-xs font-mono font-bold ${
-                          record.status === "Disputed"
-                            ? "text-blue-700"
-                            : record.status === "Absent"
-                              ? "text-rose-700"
-                              : "text-slate-700"
+                        className={`text-xs flex items-center gap-1.5 mt-1 font-medium ${
+                          record.status === "Present"
+                            ? "text-muted-foreground"
+                            : record.status === "Late"
+                              ? "text-amber-600 dark:text-amber-400 font-bold"
+                              : record.status === "Disputed"
+                                ? "text-blue-600 dark:text-blue-400 font-bold"
+                                : "text-rose-600 dark:text-rose-400"
                         }`}
                       >
-                        {record.signal}
+                        {record.status === "Present" && (
+                          <CheckCircle2
+                            size={12}
+                            className="text-emerald-500"
+                          />
+                        )}
+                        {record.status === "Late" && <Clock size={12} />}
+                        {record.status === "Absent" && <XCircle size={12} />}
+                        {record.status === "Disputed" && (
+                          <HelpCircle size={12} />
+                        )}
+                        {record.status === "Disputed"
+                          ? "Details Sent"
+                          : record.status === "Absent"
+                            ? "No Check-in"
+                            : `Checked in: ${record.time}`}
                       </span>
                     </div>
-                    {record.status === "Absent" ? (
-                      <button className="text-[11px] text-indigo-600 font-bold hover:underline">
-                        Appeal?
-                      </button>
-                    ) : (
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {record.gps}
+                  </div>
+
+                  {/* Column 3: Signal/GPS */}
+                  <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                          record.status === "Disputed"
+                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/30"
+                            : record.status === "Absent"
+                              ? "bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800/30"
+                              : "bg-muted border-border"
+                        }`}
+                      >
+                        <MapPin
+                          size={14}
+                          className={
+                            record.status === "Present"
+                              ? "text-emerald-500"
+                              : record.status === "Disputed"
+                                ? "text-blue-500"
+                                : record.status === "Absent"
+                                  ? "text-rose-400"
+                                  : "text-muted-foreground"
+                          }
+                        />
+                        <span
+                          className={`text-xs font-mono font-bold ${
+                            record.status === "Disputed"
+                              ? "text-blue-700 dark:text-blue-300"
+                              : record.status === "Absent"
+                                ? "text-rose-700 dark:text-rose-300"
+                                : "text-foreground"
+                          }`}
+                        >
+                          {record.signal}
+                        </span>
+                      </div>
+                      {record.status === "Absent" ? (
+                        <button className="text-[11px] text-brand-primary font-bold hover:underline">
+                          Appeal?
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground font-medium">
+                          {record.gps}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 4: Status Badge */}
+                  <div className="col-span-12 md:col-span-2 text-right mt-4 md:mt-0 flex md:justify-end justify-between items-center">
+                    <span className="md:hidden text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </span>
+
+                    {record.status === "Present" && (
+                      <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full border border-emerald-200 dark:border-emerald-800 text-xs font-bold shadow-sm">
+                        <CheckCircle2
+                          size={14}
+                          className="fill-emerald-600 dark:fill-emerald-400 text-primary-foreground"
+                        />{" "}
+                        Present
+                      </span>
+                    )}
+                    {record.status === "Late" && (
+                      <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full border border-amber-200 dark:border-amber-800 text-xs font-bold shadow-sm">
+                        <AlertTriangle
+                          size={14}
+                          className="fill-amber-500 dark:fill-amber-400 text-primary-foreground"
+                        />{" "}
+                        Late
+                      </span>
+                    )}
+                    {record.status === "Absent" && (
+                      <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full border border-rose-200 dark:border-rose-800 text-xs font-bold shadow-sm">
+                        <XCircle
+                          size={14}
+                          className="fill-rose-500 dark:fill-rose-400 text-primary-foreground"
+                        />{" "}
+                        Absent
+                      </span>
+                    )}
+                    {record.status === "Disputed" && (
+                      <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800 text-xs font-bold shadow-sm">
+                        <HelpCircle
+                          size={14}
+                          className="fill-blue-500 dark:fill-blue-400 text-primary-foreground"
+                        />{" "}
+                        Reviewing
                       </span>
                     )}
                   </div>
                 </div>
-
-                {/* Column 4: Status Badge */}
-                <div className="col-span-12 md:col-span-2 text-right mt-4 md:mt-0 flex md:justify-end justify-between items-center">
-                  <span className="md:hidden text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Status
-                  </span>
-
-                  {/* Logic for Status Badge Rendering */}
-                  {record.status === "Present" && (
-                    <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 text-xs font-bold shadow-sm">
-                      <CheckCircle2
-                        size={14}
-                        className="fill-emerald-600 text-white"
-                      />{" "}
-                      Present
-                    </span>
-                  )}
-                  {record.status === "Late" && (
-                    <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-amber-50 text-amber-700 rounded-full border border-amber-200 text-xs font-bold shadow-sm">
-                      <AlertTriangle
-                        size={14}
-                        className="fill-amber-500 text-white"
-                      />{" "}
-                      Late
-                    </span>
-                  )}
-                  {record.status === "Absent" && (
-                    <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-rose-50 text-rose-700 rounded-full border border-rose-200 text-xs font-bold shadow-sm">
-                      <XCircle size={14} className="fill-rose-500 text-white" />{" "}
-                      Absent
-                    </span>
-                  )}
-                  {record.status === "Disputed" && (
-                    <span className="inline-flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-xs font-bold shadow-sm">
-                      <HelpCircle
-                        size={14}
-                        className="fill-blue-500 text-white"
-                      />{" "}
-                      Reviewing
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-center">
-          <button className="text-sm font-semibold text-slate-600 hover:text-indigo-600 flex items-center gap-1 transition-colors">
+        <div className="bg-muted px-8 py-4 border-t border-border flex justify-center">
+          <button className="text-sm font-semibold text-muted-foreground hover:text-brand-primary flex items-center gap-1 transition-colors">
             Load More Records <MoreHorizontal size={16} />
           </button>
         </div>

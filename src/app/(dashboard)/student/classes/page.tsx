@@ -12,7 +12,7 @@ const classes = [
     room: "304",
     schedule: "Mon, Wed 14:00",
     progress: 75,
-    colorTheme: "blue",
+    colorTheme: "brand-primary",
   },
   {
     id: 2,
@@ -51,32 +51,32 @@ const getColorStyles = (theme: string) => {
     string,
     { bg: string; text: string; light: string; bar: string }
   > = {
-    blue: {
-      bg: "bg-blue-600",
-      text: "text-blue-700",
-      light: "bg-blue-50",
-      bar: "bg-blue-500",
+    "brand-primary": {
+      bg: "bg-brand-primary",
+      text: "text-brand-primary",
+      light: "bg-brand-primary/10",
+      bar: "bg-brand-primary",
     },
     emerald: {
       bg: "bg-emerald-600",
-      text: "text-emerald-700",
-      light: "bg-emerald-50",
+      text: "text-emerald-700 dark:text-emerald-400",
+      light: "bg-emerald-50 dark:bg-emerald-900/20",
       bar: "bg-emerald-500",
     },
     purple: {
       bg: "bg-purple-600",
-      text: "text-purple-700",
-      light: "bg-purple-50",
+      text: "text-purple-700 dark:text-purple-400",
+      light: "bg-purple-50 dark:bg-purple-900/20",
       bar: "bg-purple-500",
     },
     orange: {
       bg: "bg-orange-600",
-      text: "text-orange-700",
-      light: "bg-orange-50",
+      text: "text-orange-700 dark:text-orange-400",
+      light: "bg-orange-50 dark:bg-orange-900/20",
       bar: "bg-orange-500",
     },
   };
-  return styles[theme] || styles.blue;
+  return styles[theme] || styles["brand-primary"];
 };
 
 export default function ClassesPage() {
@@ -84,26 +84,26 @@ export default function ClassesPage() {
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
             My Courses
           </h2>
-          <p className="text-slate-500 mt-1">
+          <p className="text-muted-foreground mt-1">
             Current semester progress and enrollment
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative group">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-primary transition-colors"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-primary transition-colors"
               size={18}
             />
             <input
               type="text"
               placeholder="Search courses..."
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none w-full sm:w-64 transition-all"
+              className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none w-full sm:w-64 transition-all"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all">
+          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all">
             <Filter size={18} /> Filters
           </button>
         </div>
@@ -115,7 +115,7 @@ export default function ClassesPage() {
           return (
             <div
               key={cls.id}
-              className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
+              className="bg-card rounded-3xl p-6 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
             >
               <div className="flex justify-between items-start mb-6">
                 <div
@@ -130,37 +130,39 @@ export default function ClassesPage() {
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold text-slate-900 mb-1 group-hover:text-brand-primary transition-colors">
+              <h3 className="text-xl font-bold text-foreground mb-1 group-hover:text-brand-primary transition-colors">
                 {cls.name}
               </h3>
-              <p className="text-sm text-slate-500 mb-6">{cls.prof}</p>
+              <p className="text-sm text-muted-foreground mb-6">{cls.prof}</p>
 
               {/* Schedule and Room Section */}
               <div className="flex gap-4 mb-6">
-                <div className="flex-1 bg-slate-100 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <Calendar size={16} className="text-orange-500" />
+                <div className="flex-1 bg-muted rounded-2xl p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <Calendar size={16} className="text-amber-500" />
                     <span className="text-xs font-semibold uppercase tracking-wider">
                       Schedule
                     </span>
                   </div>
-                  <p className="text-sm font-bold text-slate-900">
+                  <p className="text-sm font-bold text-foreground">
                     {cls.schedule}
                   </p>
                 </div>
-                <div className="flex-1 bg-slate-100 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                    <MapPin size={16} className="text-red-500" />
+                <div className="flex-1 bg-muted rounded-2xl p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <MapPin size={16} className="text-rose-500" />
                     <span className="text-xs font-semibold uppercase tracking-wider">
                       Room
                     </span>
                   </div>
-                  <p className="text-sm font-bold text-slate-900">{cls.room}</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {cls.room}
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-3 mt-auto">
-                <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-white hover:bg-slate-900 transition-all duration-300">
+                <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300">
                   Continue Learning <ArrowRight size={16} />
                 </button>
               </div>
