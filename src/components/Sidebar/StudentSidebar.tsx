@@ -91,7 +91,7 @@ const SidebarSection = ({
         {title}
       </h3>
     )}
-    {!isOpen && <div className="h-px bg-border mx-2 mb-3" />}
+    {!isOpen && <div className="h-px bg-border/15 mx-2 mb-3" />}
     {children}
   </div>
 );
@@ -108,13 +108,13 @@ export default function StudentSidebar({
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-card h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
     >
       {/* Profile Area */}
       <div
         className={`flex items-center ${
           isOpen ? "px-6 py-4 gap-3" : "justify-center py-4"
-        } border-b border-border sticky top-0 bg-card/80 backdrop-blur-md z-10`}
+        } border-b border-border sticky top-0 bg-brand-dark/80 dark:bg-background/80 backdrop-blur-md z-10`}
       >
         {/* Profile Avatar */}
         <div className="relative shrink-0">
@@ -126,10 +126,10 @@ export default function StudentSidebar({
 
         {isOpen && (
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm truncate">
+            <h3 className="font-semibold text-white dark:text-foreground text-sm truncate">
               {studentName}
             </h3>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-xs text-white/70 dark:text-muted-foreground truncate">
               {studentId}
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function StudentSidebar({
       </div>
 
       {/* Collapse Sidebar Button */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border/15">
         <button
           onClick={toggleSidebar}
           className="hidden lg:flex items-center justify-center w-full py-2 text-muted-foreground hover:text-brand-primary transition-colors"
@@ -198,7 +198,7 @@ export default function StudentSidebar({
       </div>
 
       {/* Footer with Sign Out */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border/15">
         <button
           className={`flex items-center ${
             isOpen ? "gap-2 justify-start" : "justify-center"

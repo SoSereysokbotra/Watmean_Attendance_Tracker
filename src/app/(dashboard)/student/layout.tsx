@@ -43,7 +43,7 @@ export default function StudentLayout({
         }`}
       >
         {/* Top Header */}
-        <header className="h-16 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
+        <header className="h-18 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}

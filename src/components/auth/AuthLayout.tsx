@@ -49,7 +49,7 @@ export function AuthLayout({
       </div>
 
       {/* --- RIGHT SIDE: Branding (Hidden on Mobile) --- */}
-      <div className="hidden lg:flex flex-1 relative bg-brand-dark overflow-hidden flex-col justify-between p-16 text-foreground border-l border-border transition-colors duration-300">
+      <div className="hidden lg:flex flex-1 relative bg-brand-dark dark:bg-background overflow-hidden flex-col justify-between p-16 text-foreground border-l border-border transition-colors duration-300">
         {/* Logo Area */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-brand-primary text-white flex items-center justify-center shadow-xl shadow-brand-primary/20">

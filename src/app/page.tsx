@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ModeToggle } from "../components/mode-toggle";
 import { motion, Variants } from "framer-motion";
 import { BlurReveal } from "../components/ui/blur-reveal";
+import { TypingAnimation } from "../components/typing-animation";
 import {
   MapPin,
   ShieldCheck,
@@ -12,10 +13,11 @@ import {
   GraduationCap,
   LayoutDashboard,
   Smartphone,
-  Users,  
+  Users,
   Fingerprint,
   BarChart3,
 } from "lucide-react";
+import { useState } from "react";
 
 // --- ANIMATION VARIANTS ---
 const containerVariants: Variants = {
@@ -49,6 +51,8 @@ const videoVariants: Variants = {
 };
 
 export default function WelcomePage() {
+  const [headlinePart1Done, setHeadlinePart1Done] = useState(false);
+  const [headlinePart2Done, setHeadlinePart2Done] = useState(false);
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground selection:bg-primary/30">
       {/* --- HEADER (Floating Pill Style) --- */}
@@ -112,9 +116,9 @@ export default function WelcomePage() {
 
       <main className="flex-1 pt-32">
         {/* --- HERO SECTION --- */}
-        <section className="relative overflow-hidden min-h-[50vh] flex items-center px-4 py-10">
+        <section className="relative overflow-hidden min-h-[50vh] flex items-center px-4 py-30">
           <div className="container mx-auto max-w-7xl">
-            <div className="flex flex-col items-center justify-center space-y-12 lg:space-y-16">
+            <div className="flex flex-col items-center justify-center space-y-12 lg:space-y-80">
               {/* 1. TEXT CONTAINER */}
               <motion.div
                 variants={containerVariants}
@@ -122,28 +126,49 @@ export default function WelcomePage() {
                 animate="visible"
                 className="space-y-6 text-center max-w-3xl"
               >
-                <motion.h1
+                {/* HEADLINE */}
+                {/* Note: min-h prevents layout shift while typing */}
+                <motion.div
                   variants={itemVariants}
-                  className="text-5xl lg:text-7xl font-bold text-muted-brand-dark leading-[1.1]"
+                  className="min-h-[140px] sm:min-h-[160px]"
                 >
-                  Campus Attendance,
-                  <br />
-                  <span className="text-5xl lg:text-7xl font-bold text-brand-primary leading-[1.1]">
-                    Reimagined.
-                  </span>
-                </motion.h1>
+                  <h1 className="text-5xl lg:text-7xl font-bold text-muted-brand-dark leading-[1.1]">
+                    {/* Line 1 */}
+                    <TypingAnimation
+                      text="Campus Attendance,"
+                      delay={500}
+                      onComplete={() => setHeadlinePart1Done(true)}
+                    />
+                    <br />
 
-                <motion.p
-                  variants={itemVariants}
-                  className="text-lg text-muted-foreground leading-relaxed mx-auto max-w-2xl"
-                >
-                  The definitive geolocation platform for universities. Automate
-                  faculty reporting, validate student presence, and integrate
-                  seamlessly with your LMS.
-                </motion.p>
+                    {/* Line 2 (Wait for Line 1) */}
+                    <span className="text-brand-primary">
+                      {headlinePart1Done && (
+                        <TypingAnimation
+                          text="Reimagined."
+                          onComplete={() => setHeadlinePart2Done(true)}
+                        />
+                      )}
+                    </span>
+                  </h1>
+                </motion.div>
+
+                {/* PARAGRAPH (Wait for Line 2) */}
+                <motion.div variants={itemVariants}>
+                  <p className="text-lg text-muted-foreground leading-relaxed mx-auto max-w-2xl min-h-[84px]">
+                    {headlinePart2Done && (
+                      <TypingAnimation
+                        text="The definitive geolocation platform for universities. Automate faculty reporting, validate student presence, and integrate seamlessly with your LMS."
+                        delay={200}
+                        minSpeed={5}
+                        maxSpeed={25}
+                      />
+                    )}
+                  </p>
+                </motion.div>
               </motion.div>
 
-              {/* 2. VIDEO CONTAINER */}
+              {/* 2. VIDEO CONTAINER (Standard) */}
               <motion.div
                 variants={videoVariants}
                 initial="hidden"
