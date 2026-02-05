@@ -82,11 +82,11 @@ export default function TeacherClassesPage() {
   const getStatusColor = (status: Class["status"]) => {
     switch (status) {
       case "active":
-        return "bg-emerald-100 text-emerald-700";
+        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
       case "upcoming":
-        return "bg-amber-100 text-amber-700";
+        return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
       case "ended":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400";
     }
   };
 
@@ -214,14 +214,14 @@ export default function TeacherClassesPage() {
 
             <div className="flex gap-2">
               <Link
-                href={`/teacher/active/${cls.id}`}
-                className="flex-1 py-2.5 text-center bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors"
+                href={`/teacher/active`}
+                className="flex-1 py-2.5 text-center bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors text-sm"
               >
-                View Attendance
+                Take Attendance
               </Link>
               <Link
                 href={`/teacher/classes/${cls.id}`}
-                className="flex-1 py-2.5 text-center border border-border rounded-lg font-medium hover:bg-muted transition-colors"
+                className="flex-1 py-2.5 text-center border border-border rounded-lg font-medium hover:bg-muted transition-colors text-sm"
               >
                 Details
               </Link>
