@@ -2,29 +2,19 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { MapPin, Loader2, Info, Target } from "lucide-react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap,
-  Circle,
-  Polyline,
-} from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import dynamic from "next/dynamic";
 
-// Custom Icons
-const createIcon = (color: string) =>
-  new L.DivIcon({
-    className: "custom-div-icon",
-    html: `<div style="background-color: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-
-const userIcon = createIcon("var(--brand-primary)");
-const targetIcon = createIcon("#ef4444");
+const StudentCheckinMap = dynamic(
+  () => import("@/components/student/StudentCheckinMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full bg-muted animate-pulse flex items-center justify-center">
+        Loading Map...
+      </div>
+    ),
+  },
+);
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
@@ -40,27 +30,6 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return Math.round(R * c);
 }
 
-function MapController({
-  centerOnUser,
-  centerOnTarget,
-  userPos,
-  targetPos,
-}: {
-  centerOnUser: boolean;
-  centerOnTarget: boolean;
-  userPos: [number, number] | null;
-  targetPos: [number, number];
-}) {
-  const map = useMap();
-  useEffect(() => {
-    if (centerOnUser && userPos) map.flyTo(userPos, 18, { duration: 1.5 });
-  }, [centerOnUser, userPos, map]);
-  useEffect(() => {
-    if (centerOnTarget) map.flyTo(targetPos, 18, { duration: 1.5 });
-  }, [centerOnTarget, targetPos, map]);
-  return null;
-}
-
 export default function LiveMapView() {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +37,7 @@ export default function LiveMapView() {
   const [triggerCenterUser, setTriggerCenterUser] = useState(0);
   const [triggerCenterTarget, setTriggerCenterTarget] = useState(0);
 
-  const targetLocation: [number, number] = [11.510647000000002, 104.824125];
+  const targetLocation: [number, number] = [12.5657, 104.991];
   const ATTENDANCE_RADIUS = 100;
 
   const distance = useMemo(() => {
@@ -100,41 +69,13 @@ export default function LiveMapView() {
     <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group">
       {/* Map Area */}
       <div className="flex-1 relative z-0">
-        <MapContainer
-          center={targetLocation}
-          zoom={15}
-          style={{ height: "100%", width: "100%" }}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MapController
-            centerOnUser={!!triggerCenterUser}
-            centerOnTarget={!!triggerCenterTarget}
-            userPos={position}
-            targetPos={targetLocation}
-          />
-
-          <Marker position={targetLocation} icon={targetIcon}>
-            <Popup>Classroom 304</Popup>
-          </Marker>
-          <Circle
-            center={targetLocation}
-            radius={ATTENDANCE_RADIUS}
-            pathOptions={{ color: "red", fillColor: "red", fillOpacity: 0.1 }}
-          />
-
-          {position && (
-            <>
-              <Marker position={position} icon={userIcon}>
-                <Popup>You</Popup>
-              </Marker>
-              <Polyline
-                positions={[position, targetLocation]}
-                color="var(--brand-primary)"
-                dashArray="5, 10"
-              />
-            </>
-          )}
-        </MapContainer>
+        <StudentCheckinMap
+          position={position}
+          targetLocation={targetLocation}
+          attendanceRadius={ATTENDANCE_RADIUS}
+          triggerCenterUser={triggerCenterUser}
+          triggerCenterTarget={triggerCenterTarget}
+        />
 
         {/* Loading Overlay */}
         {!position && !error && (

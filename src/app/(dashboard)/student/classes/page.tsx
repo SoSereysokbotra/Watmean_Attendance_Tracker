@@ -7,7 +7,6 @@ const classes = [
   {
     id: 1,
     name: "Physics 101",
-    code: "PHY-101",
     prof: "Dr. Davis",
     room: "304",
     schedule: "Mon, Wed 14:00",
@@ -17,33 +16,12 @@ const classes = [
   {
     id: 2,
     name: "Chemistry 201",
-    code: "CHM-201",
     prof: "Prof. Johnson",
     room: "Lab B",
     schedule: "Tue, Thu 10:00",
     progress: 60,
     colorTheme: "emerald",
-  },
-  {
-    id: 3,
-    name: "Calculus II",
-    code: "MAT-202",
-    prof: "Dr. Williams",
-    room: "Hall C",
-    schedule: "Fri 09:00",
-    progress: 90,
-    colorTheme: "purple",
-  },
-  {
-    id: 4,
-    name: "Art History",
-    code: "ART-105",
-    prof: "Ms. Glaire",
-    room: "Studio 1",
-    schedule: "Wed 16:00",
-    progress: 40,
-    colorTheme: "orange",
-  },
+  }
 ];
 
 const getColorStyles = (theme: string) => {
@@ -115,21 +93,8 @@ export default function ClassesPage() {
           return (
             <div
               key={cls.id}
-              className="bg-card rounded-3xl p-6 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
+              className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
             >
-              <div className="flex justify-between items-start mb-6">
-                <div
-                  className={`w-12 h-12 rounded-2xl ${colors.light} flex items-center justify-center text-xl font-bold ${colors.text} mb-4`}
-                >
-                  {cls.code.split("-")[0]}
-                </div>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold ${colors.light} ${colors.text}`}
-                >
-                  {cls.code}
-                </span>
-              </div>
-
               <h3 className="text-xl font-bold text-foreground mb-1 group-hover:text-brand-primary transition-colors">
                 {cls.name}
               </h3>

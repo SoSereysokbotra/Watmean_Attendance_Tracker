@@ -6,7 +6,7 @@ import { SettingsLayout } from "../../../../components/settings/SettingsLayout";
 import { ThemeSelectionCard } from "../../../../components/settings/ThemeSelectionCard";
 import { UserProfileSettings } from "../../../../components/settings/UserProfileSettings";
 
-export default function StudentSettingsView() {
+export default function TeacherSettingsView() {
   const [activeTab, setActiveTab] = useState("profile");
 
   const menuItems = [
@@ -14,7 +14,7 @@ export default function StudentSettingsView() {
     { id: "preferences", label: "Preferences", icon: Globe },
   ];
 
-  const studentData = {
+  const teacherData = {
     fullName: "Username123",
     email: "Username123@gmail.com",
     phone: "1234567890",
@@ -24,16 +24,16 @@ export default function StudentSettingsView() {
   return (
     <SettingsLayout
       title="Settings"
-      description="Manage your student account and app preferences."
+      description="Manage your teacher account and app preferences."
       menuItems={menuItems}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >
       {activeTab === "profile" && (
         <UserProfileSettings
-          role="Student"
+          role="Teacher"
           userId="20245592"
-          userData={studentData}
+          userData={teacherData}
         />
       )}
 

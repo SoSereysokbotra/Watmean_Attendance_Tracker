@@ -11,6 +11,9 @@ import {
   MapPin,
   TrendingUp,
   Clock,
+  BookOpen,
+  Activity,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
@@ -38,36 +41,6 @@ export default function TeacherClassesPage() {
       schedule: "Mon, Wed, Fri • 08:00-10:00",
       location: "Room A-204",
       status: "active",
-    },
-    {
-      id: "2",
-      name: "Calculus II",
-      code: "CAL201",
-      students: 32,
-      attendanceRate: 88,
-      schedule: "Tue, Thu • 10:30-12:30",
-      location: "Room B-101",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Chemistry 201: Organic",
-      code: "CHE201",
-      students: 25,
-      attendanceRate: 91,
-      schedule: "Mon, Wed • 14:00-16:00",
-      location: "Lab C-305",
-      status: "upcoming",
-    },
-    {
-      id: "4",
-      name: "Biology 101",
-      code: "BIO101",
-      students: 30,
-      attendanceRate: 85,
-      schedule: "Tue, Thu • 08:00-10:00",
-      location: "Lab D-102",
-      status: "ended",
     },
   ]);
 
@@ -124,36 +97,6 @@ export default function TeacherClassesPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-card p-4 rounded-2xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Classes</p>
-          <p className="text-2xl font-bold text-foreground">{classes.length}</p>
-        </div>
-        <div className="bg-card p-4 rounded-2xl border border-border">
-          <p className="text-sm text-muted-foreground">Active Now</p>
-          <p className="text-2xl font-bold text-emerald-600">
-            {classes.filter((c) => c.status === "active").length}
-          </p>
-        </div>
-        <div className="bg-card p-4 rounded-2xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Students</p>
-          <p className="text-2xl font-bold text-foreground">
-            {classes.reduce((acc, c) => acc + c.students, 0)}
-          </p>
-        </div>
-        <div className="bg-card p-4 rounded-2xl border border-border">
-          <p className="text-sm text-muted-foreground">Avg. Attendance</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {Math.round(
-              classes.reduce((acc, c) => acc + c.attendanceRate, 0) /
-                classes.length,
-            )}
-            %
-          </p>
-        </div>
-      </div>
-
       {/* Classes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredClasses.map((cls) => (
@@ -194,11 +137,11 @@ export default function TeacherClassesPage() {
             </div>
 
             <div className="mb-6">
-              <div className="flex items-center justify-between text-sm mb-2">
+              {/* <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Attendance Rate</span>
-                <span className="font-bold">{cls.attendanceRate}%</span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                 <span className="font-bold">{cls.attendanceRate}%</span>
+              </div> */}
+              {/* <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
                     cls.attendanceRate >= 90
@@ -209,7 +152,7 @@ export default function TeacherClassesPage() {
                   }`}
                   style={{ width: `${cls.attendanceRate}%` }}
                 />
-              </div>
+              </div> */}
             </div>
 
             <div className="flex gap-2">

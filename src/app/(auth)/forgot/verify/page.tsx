@@ -82,7 +82,8 @@ export default function VerifyResetCodePage() {
 
           <button
             type="submit"
-            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
+            disabled={otp.some((digit) => digit === "")}
+            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             Verify Code
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

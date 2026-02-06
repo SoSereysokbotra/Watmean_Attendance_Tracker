@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/Input";
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   MapPin,
   Search,
-  Users,
   Target,
   MoreHorizontal,
   Bell,
@@ -15,32 +13,52 @@ import {
   Plus,
   Settings,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 
-// Mock Data
+// ---------------------------------------------------------
+// 1. Dynamic Import (SSR: False)
+// ---------------------------------------------------------
+const TeacherMap = dynamic(() => import("@/components/teacher/TeacherMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full bg-muted animate-pulse flex items-center justify-center flex-col gap-2">
+      <Loader2 className="animate-spin text-brand-primary" size={32} />
+      <span className="text-sm text-muted-foreground">
+        Loading Campus Map...
+      </span>
+    </div>
+  ),
+});
+
+// ---------------------------------------------------------
+// 2. Mock Data (With Real Coordinates)
+// ---------------------------------------------------------
 const activeZones = [
   {
     id: 1,
     name: "Physics 101",
     room: "Room 204",
-    radius: 50,
+    radius: 60,
     current: 28,
     total: 30,
     status: "active",
     alerts: 0,
-    coords: { top: "35%", left: "25%" },
+    lat: 11.5564,
+    lng: 104.9282,
     color: "bg-emerald-500",
   },
   {
     id: 2,
     name: "CompSci 300",
     room: "Lab 3",
-    radius: 25,
+    radius: 35,
     current: 40,
     total: 42,
     status: "active",
     alerts: 2,
-    coords: { top: "55%", left: "60%" },
+    lat: 11.555,
+    lng: 104.925,
     color: "bg-indigo-500",
   },
   {
@@ -52,275 +70,178 @@ const activeZones = [
     total: 50,
     status: "pending",
     alerts: 0,
-    coords: { top: "20%", left: "50%" },
+    lat: 11.558,
+    lng: 104.929,
     color: "bg-gray-400",
   },
 ];
 
-export default function CleanTeacherMap() {
+export default function TeacherLiveMap() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selectedZone = activeZones.find((z) => z.id === selectedId);
 
   return (
-    // CHANGE 1: Adjusted container height and styling to fit inside the Dashboard Layout
-    // - Removed h-screen (which conflicts with layout header)
-    // - Added h-[calc(100vh-9rem)] to fill remaining space dynamically
-    // - Added rounded corners and borders to match dashboard aesthetic
-    <div className="flex h-[calc(100vh-9rem)] w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden font-sans">
-      {/* ----------------------------------------------------------------------
-          1. MAIN MAP AREA (Left Side)
-      ---------------------------------------------------------------------- */}
-      <div className="flex-1 relative bg-gray-100 overflow-hidden">
-        {/* Map Background */}
-        {/* Note: In a real app, ensure your map component handles container resizing */}
-        <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/104.9282,11.5564,15,0/1600x1200?access_token=YOUR_TOKEN')] bg-cover bg-center opacity-90 grayscale-[10%]" />
+    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex group font-sans relative">
+      {/* ---------------------------------------------------------
+          Left: Map Area
+      --------------------------------------------------------- */}
+      <div className="flex-1 relative z-0">
+        {/* Reusable Component */}
+        <TeacherMap
+          zones={activeZones}
+          selectedId={selectedId}
+          onSelectZone={setSelectedId}
+        />
 
-        {/* Top Overlay Bar */}
-        <div className="absolute top-4 left-4 right-4 flex flex-col sm:flex-row justify-between items-start pointer-events-none gap-4">
-          {/* Title Area */}
-          <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-xl shadow-sm border border-gray-100 pointer-events-auto flex items-center gap-4">
-            <div className="bg-gray-900 text-white p-2 rounded-lg">
-              <MapPin size={20} />
+        {/* Floating Overlay Header */}
+        <div className="absolute top-0 left-0 right-0 p-0.5 z-[1000] pointer-events-none">
+          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3 flex flex-col sm:flex-row justify-between items-center gap-3 m-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="h-10 w-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+                <Target size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-foreground">
+                  Campus Monitor
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {activeZones.filter((z) => z.status === "active").length}{" "}
+                  Active Sessions
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-gray-900">
-                Live Campus Monitor
-              </h1>
-              <p className="text-xs text-gray-500">
-                {activeZones.filter((z) => z.status === "active").length} Active
-                Classes
-              </p>
-            </div>
-          </div>
 
-          {/* Search & Actions */}
-          <div className="flex gap-2 pointer-events-auto">
-            <div className="relative group hidden sm:block">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={16}
-              />
-              <Input
-                className="w-48 lg:w-64 pl-9 bg-white/90 backdrop-blur-md border-gray-100 shadow-sm rounded-xl focus:ring-indigo-500"
-                placeholder="Search class..."
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative group flex-1 sm:flex-none">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  size={14}
+                />
+                <input
+                  type="text"
+                  className="w-full sm:w-48 pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                  placeholder="Find class..."
+                />
+              </div>
+              <button className="p-2 bg-brand-primary text-background rounded-lg hover:opacity-90 transition-opacity shadow-sm">
+                <Plus size={18} />
+              </button>
             </div>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md rounded-xl px-4">
-              <Plus size={16} className="mr-2" />{" "}
-              <span className="hidden sm:inline">New Class</span>
-            </Button>
           </div>
         </div>
-
-        {/* Map Markers */}
-        {activeZones.map((zone) => {
-          const isSelected = selectedId === zone.id;
-          return (
-            <div
-              key={zone.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-              style={{ top: zone.coords.top, left: zone.coords.left }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedId(zone.id);
-              }}
-            >
-              {/* RADIUS VISUALIZATION */}
-              <div
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-all duration-300 pointer-events-none flex items-center justify-center
-                  ${
-                    isSelected
-                      ? `w-48 h-48 sm:w-64 sm:h-64 bg-indigo-500/10 border-indigo-500/30`
-                      : `w-24 h-24 sm:w-32 sm:h-32 opacity-0 group-hover:opacity-100 bg-gray-500/5 border-dashed border-gray-400`
-                  }
-                `}
-              >
-                {isSelected && (
-                  <div className="absolute top-0 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full -mt-2.5">
-                    {zone.radius}m Radius
-                  </div>
-                )}
-              </div>
-
-              {/* CENTER PIN */}
-              <div
-                className={`relative flex flex-col items-center transition-transform duration-300 ${isSelected ? "scale-110" : "hover:-translate-y-1"}`}
-              >
-                {zone.alerts > 0 && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white z-20 animate-pulse" />
-                )}
-
-                <div
-                  className={`w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-white transition-colors duration-300
-                  ${isSelected ? "bg-gray-900 ring-4 ring-white/50" : zone.color}
-                `}
-                >
-                  <span className="font-bold text-xs">
-                    {zone.name.substring(0, 2)}
-                  </span>
-                </div>
-
-                <div
-                  className={`mt-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-gray-100 text-xs font-semibold whitespace-nowrap transition-opacity
-                   ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-                `}
-                >
-                  {zone.name}
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
-      {/* ----------------------------------------------------------------------
-          2. DETAILS PANEL (Right Side)
-      ---------------------------------------------------------------------- */}
-      {/* CHANGE 2: Made sidebar width responsive and cleaner borders */}
-      <div className="w-[300px] lg:w-[360px] bg-white border-l border-gray-200 hidden md:flex flex-col z-10">
+      {/* ---------------------------------------------------------
+          Right: Sidebar Details
+      --------------------------------------------------------- */}
+      <div className="w-[320px] lg:w-[360px] bg-card border-l border-border hidden md:flex flex-col z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
         {selectedZone ? (
           <>
-            {/* Header Section */}
-            <div className="p-6 border-b border-gray-100">
+            {/* Zone Header */}
+            <div className="p-5 border-b border-border">
               <div className="flex justify-between items-start mb-1">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-foreground">
                   {selectedZone.name}
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-gray-400"
-                >
+                <button className="text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors">
                   <MoreHorizontal size={18} />
-                </Button>
+                </button>
               </div>
-              <p className="text-sm text-gray-500 flex items-center gap-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <MapPin size={14} /> {selectedZone.room}
-              </p>
-
-              <div className="mt-4 flex gap-2">
+              </div>
+              <div className="flex gap-2">
                 <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedZone.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border ${selectedZone.status === "active" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}
                 >
                   {selectedZone.status === "active"
                     ? "Live Session"
                     : "Pending"}
                 </span>
                 {selectedZone.alerts > 0 && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/20">
                     {selectedZone.alerts} Alerts
                   </span>
                 )}
               </div>
             </div>
 
-            {/* KEY METRICS GRID */}
-            <div className="grid grid-cols-2 divide-x divide-gray-100 border-b border-gray-100">
-              <div className="p-6 text-center hover:bg-gray-50 transition-colors group cursor-pointer">
-                <p className="text-xs text-gray-400 font-semibold uppercase mb-1">
+            {/* Metrics */}
+            <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
+              <div className="p-5 flex flex-col items-center justify-center hover:bg-muted/30 transition-colors cursor-pointer group">
+                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Geofence
                 </p>
-                <div className="flex items-center justify-center gap-2 text-indigo-600">
-                  <Target size={20} />
-                  <span className="text-2xl font-bold">
-                    {selectedZone.radius}m
+                <div className="flex items-baseline gap-1 text-indigo-600">
+                  <Target size={16} className="text-muted-foreground" />
+                  <span className="text-2xl font-bold text-foreground">
+                    {selectedZone.radius}
                   </span>
+                  <span className="text-xs text-muted-foreground">m</span>
                 </div>
-                <p className="text-[10px] text-indigo-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Click to Edit
-                </p>
               </div>
-
-              <div className="p-6 text-center hover:bg-gray-50 transition-colors">
-                <p className="text-xs text-gray-400 font-semibold uppercase mb-1">
+              <div className="p-5 flex flex-col items-center justify-center hover:bg-muted/30 transition-colors">
+                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Attendance
                 </p>
-                <div className="flex items-center justify-center gap-2 text-gray-900">
-                  <Users size={20} className="text-gray-400" />
-                  <span className="text-2xl font-bold">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-foreground">
                     {selectedZone.current}
                   </span>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     / {selectedZone.total}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Alert List */}
-            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-200">
-              <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Bell size={14} /> Recent Activity
+            {/* Alerts */}
+            <div className="flex-1 overflow-y-auto p-5">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Bell size={12} /> Recent Alerts
               </h3>
-
               <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="mt-1">
-                    <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
+                <div className="flex gap-3 group">
+                  <div className="mt-0.5">
+                    <div className="w-8 h-8 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center border border-red-500/20">
                       <XCircle size={14} />
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-semibold text-foreground">
                       Out of Bounds
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Student <span className="text-gray-900">Sokheng</span>{" "}
-                      moved outside the {selectedZone.radius}m radius.
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Student left the zone.
                     </p>
-                    <span className="text-[10px] text-gray-400 block mt-1">
-                      2 mins ago
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="mt-1">
-                    <div className="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center border border-green-100">
-                      <CheckCircle2 size={14} />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Check-in Verified
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      5 students clocked in successfully.
-                    </p>
-                    <span className="text-[10px] text-gray-400 block mt-1">
-                      10 mins ago
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="p-4 bg-gray-50 border-t border-gray-200">
-              <Button className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-sm flex justify-between group">
+            {/* Footer */}
+            <div className="p-4 bg-muted/30 border-t border-border">
+              <button className="w-full bg-brand-primary border-border hover:bg-muted text-brand-light p-3 rounded-xl text-sm font-bold shadow-sm transition-all flex justify-between items-center group">
                 <span className="flex items-center gap-2">
-                  <Settings size={16} /> Class Settings
+                  <Settings size={16} /> Settings
                 </span>
                 <ChevronRight
                   size={16}
-                  className="text-gray-400 group-hover:text-gray-600"
+                  className="text-light group-hover:translate-x-1 transition-transform"
                 />
-              </Button>
+              </button>
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-muted/10">
+            <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 text-muted-foreground animate-pulse">
               <MapPin size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Select a Class</h3>
-            <p className="text-sm text-gray-500 mt-2">
-              Click a pin on the map to view the geofence radius and student
-              attendance.
+            <h3 className="text-md font-bold text-foreground">
+              No Class Selected
+            </h3>
+            <p className="text-xs text-muted-foreground mt-2">
+              Click a pin on the map to view details.
             </p>
           </div>
         )}

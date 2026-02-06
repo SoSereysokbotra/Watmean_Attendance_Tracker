@@ -70,13 +70,6 @@ export default function TeacherLayout({
                 className="pl-9 pr-4 py-2 bg-muted border-none rounded-full text-sm focus:ring-2 focus:ring-brand-primary/20 focus:bg-card outline-none w-64 transition-colors"
               />
             </div>
-            <button className="relative p-2 hover:bg-accent rounded-full transition-colors">
-              <Bell size={20} className="text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-card"></span>
-            </button>
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-brand-primary to-purple-600 flex items-center justify-center text-primary-foreground font-bold text-xs shadow-md">
-              TD
-            </div>
           </div>
         </header>
 

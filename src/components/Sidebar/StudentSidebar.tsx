@@ -49,7 +49,7 @@ const SidebarItem = ({
     <div
       className={`flex items-center ${
         isOpen ? "gap-3 px-3" : "justify-center px-2"
-      } py-2 rounded-lg cursor-pointer mb-1 transition-colors relative group ${
+      } py-2 rounded-lg cursor-pointer mb-7 transition-colors relative group ${
         isActive
           ? "bg-brand-primary/10 text-brand-primary font-medium"
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -85,9 +85,9 @@ const SidebarSection = ({
   children: React.ReactNode;
   isOpen: boolean;
 }) => (
-  <div className="mb-6">
+  <div className="mb-8">
     {isOpen && (
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-5 px-3">
         {title}
       </h3>
     )}
@@ -100,7 +100,7 @@ export default function StudentSidebar({
   isOpen,
   toggleSidebar,
 }: StudentSidebarProps) {
-  const studentName = "Alex Johnson";
+  const studentName = "So Sereysokbotra";
   const studentId = "STU-2024-789";
   const studentInitials = "AJ";
 

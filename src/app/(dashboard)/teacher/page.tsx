@@ -20,56 +20,19 @@ import {
 
 // --- Map Imports ---
 import dynamic from "next/dynamic";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { useMapEvents } from "react-leaflet";
+import { div } from "framer-motion/client";
 
-// Dynamic loading for Map components
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false },
+const TeacherLocationPicker = dynamic(
+  () => import("@/components/teacher/TeacherLocationPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full bg-muted animate-pulse rounded-2xl flex items-center justify-center">
+        Loading Map...
+      </div>
+    ),
+  },
 );
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false },
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false },
-);
-const Circle = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Circle),
-  { ssr: false },
-);
-
-// --- Custom Components ---
-
-// 1. Map Event Handler
-const LocationMarker = ({
-  onLocationSelect,
-}: {
-  onLocationSelect: (lat: number, lng: number) => void;
-}) => {
-  useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-};
-
-// 2. Custom Icon (Using a generic blue that likely matches brand-primary, or standardizing)
-const getPickerIcon = () => {
-  return L.divIcon({
-    className: "custom-picker-icon",
-    html: `<div class="relative flex h-6 w-6">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-6 w-6 bg-blue-600 border-2 border-white shadow-lg"></span>
-           </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-};
 
 export default function TeacherDashboardPage() {
   const [mounted, setMounted] = useState(false);
@@ -84,14 +47,18 @@ export default function TeacherDashboardPage() {
 
   const [newSession, setNewSession] = useState({
     className: "",
-    time: "08:00",
+    room: "",
+    date: new Date().toISOString().split("T")[0],
+    startTime: "08:00",
+    endTime: "10:00",
+    radius: "50",
     lat: 11.5564,
     lng: 104.9282,
   });
 
   const handleCreateSession = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Launching Session at:", newSession.lat, newSession.lng);
+    console.log("Launching Session:", newSession);
     setIsModalOpen(false);
   };
 
@@ -99,32 +66,28 @@ export default function TeacherDashboardPage() {
   const stats = [
     {
       title: "Total Classes",
-      value: "12",
-      change: "+2 this month",
+      value: "0",
       icon: BookOpen,
       colorClass: "text-brand-primary",
       bgClass: "bg-brand-primary/10",
     },
     {
       title: "Active Students",
-      value: "142",
-      change: "+5 enrollments",
+      value: "0",
       icon: Users,
       colorClass: "text-indigo-500",
       bgClass: "bg-indigo-500/10",
     },
     {
       title: "Avg. Attendance",
-      value: "92.4%",
-      change: "+2.1% trend",
+      value: "0%",
       icon: TrendingUp,
       colorClass: "text-emerald-500",
       bgClass: "bg-emerald-500/10",
     },
     {
       title: "At Risk",
-      value: "3",
-      change: "Requires action",
+      value: "0",
       icon: AlertCircle,
       colorClass: "text-rose-500",
       bgClass: "bg-rose-500/10",
@@ -141,60 +104,10 @@ export default function TeacherDashboardPage() {
       total: 30,
       room: "Room 304",
     },
-    {
-      id: 2,
-      title: "Calculus II",
-      time: "10:30 - 12:30",
-      status: "Upcoming",
-      attendance: 0,
-      total: 32,
-      room: "Hall A",
-    },
-    {
-      id: 3,
-      title: "Intro to CS",
-      time: "Yesterday",
-      status: "Completed",
-      attendance: 42,
-      total: 45,
-      room: "Lab 2",
-    },
   ];
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-brand-primary/30 pb-20">
-      {/* --- Header --- */}
-      <header className="sticky top-0 z-30 w-full border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo Section */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg shadow-brand-primary/20">
-              <MapPin className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">Watmean</span>
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center rounded-full bg-muted/50 px-3 py-1.5 text-sm font-medium text-muted-foreground">
-              <Calendar className="mr-2 h-4 w-4" />
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-              })}
-            </div>
-            <button className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted text-muted-foreground hover:text-foreground">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-background"></span>
-            </button>
-            <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-brand-primary to-indigo-500 text-sm font-bold text-white shadow-md ring-offset-2 hover:ring-2 ring-brand-primary transition-all">
-              PD
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* --- Welcome & Action --- */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -243,9 +156,6 @@ export default function TeacherDashboardPage() {
                   <h3 className="text-2xl font-bold text-foreground">
                     {stat.value}
                   </h3>
-                  <span className="inline-block rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-xs font-semibold text-emerald-600">
-                    {stat.change}
-                  </span>
                 </div>
               </div>
             </div>
@@ -282,7 +192,7 @@ export default function TeacherDashboardPage() {
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left Column: Sessions */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
               <div className="rounded-2xl border border-border bg-card shadow-sm">
                 <div className="flex items-center justify-between border-b border-border p-6">
                   <div className="flex items-center gap-2">
@@ -353,76 +263,6 @@ export default function TeacherDashboardPage() {
                 </div>
               </div>
             </div>
-
-            {/* Right Column: Dark Theme Quick Actions (Matching Auth Page Side) */}
-            <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-2xl bg-brand-dark p-6 text-white shadow-xl">
-                {/* Branding Accent mimicking the Auth Page */}
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 h-32 w-32 rounded-full bg-brand-primary blur-3xl opacity-20 pointer-events-none"></div>
-
-                <div className="relative z-10">
-                  <h3 className="mb-4 text-lg font-bold">Quick Actions</h3>
-                  <div className="grid gap-3">
-                    <button className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition-colors hover:bg-white/10">
-                      <Navigation className="h-4 w-4 text-brand-primary" />
-                      Calibrate GPS
-                    </button>
-                    <button className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition-colors hover:bg-white/10">
-                      <Users className="h-4 w-4 text-indigo-400" />
-                      Manage Roster
-                    </button>
-                    <button className="group flex w-full flex-col gap-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:bg-white/10">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                        <span className="text-sm font-medium">
-                          Export Reports
-                        </span>
-                      </div>
-                      <span className="ml-7 text-xs text-white/50 group-hover:text-white/70">
-                        CSV format available
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Footer Accent from Auth Page */}
-                  <div className="mt-6 flex gap-2 opacity-50">
-                    <div className="h-1 w-8 rounded-full bg-brand-primary"></div>
-                    <div className="h-1 w-2 rounded-full bg-white/20"></div>
-                    <div className="h-1 w-2 rounded-full bg-white/20"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notifications */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">
-                    Notifications
-                  </h3>
-                  <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-primary">
-                    New
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  {[1, 2].map((_, i) => (
-                    <div key={i} className="flex gap-3">
-                      <div
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${i === 0 ? "bg-brand-primary" : "bg-muted-foreground/30"}`}
-                      ></div>
-                      <div>
-                        <p className="text-sm text-foreground">
-                          Automatic sync completed for{" "}
-                          <span className="font-semibold">Calculus II</span>.
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          2 hours ago
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -478,6 +318,7 @@ export default function TeacherDashboardPage() {
                 onSubmit={handleCreateSession}
                 className="space-y-6"
               >
+                {/* --- Class Details --- */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -498,58 +339,114 @@ export default function TeacherDashboardPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Start Time
+                      Room / Location
                     </label>
                     <input
-                      type="time"
-                      value={newSession.time}
+                      required
+                      placeholder="e.g. Room 304"
+                      value={newSession.room}
                       onChange={(e) =>
-                        setNewSession({ ...newSession, time: e.target.value })
+                        setNewSession({
+                          ...newSession,
+                          room: e.target.value,
+                        })
                       }
                       className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                     />
                   </div>
                 </div>
 
+                {/* --- Time Details --- */}
+                <div className="grid grid-cols-2 gap-6 md:grid-cols-2">
+                  <div className="space-y-10">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      value={newSession.startTime}
+                      onChange={(e) =>
+                        setNewSession({
+                          ...newSession,
+                          startTime: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      value={newSession.endTime}
+                      onChange={(e) =>
+                        setNewSession({
+                          ...newSession,
+                          endTime: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newSession.date}
+                      onChange={(e) =>
+                        setNewSession({ ...newSession, date: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      RADIUS
+                    </label>
+                    <input
+                      required
+                      placeholder="e.g. 50"
+                      value={newSession.radius}
+                      onChange={(e) =>
+                        setNewSession({
+                          ...newSession,
+                          radius: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                </div>
+
+                {/* --- Geofence Details --- */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Geofence Location
-                    </label>
-                    <span className="font-mono text-[10px] text-brand-primary">
-                      {newSession.lat.toFixed(5)}, {newSession.lng.toFixed(5)}
-                    </span>
+                    <div className="space-y-0.5">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Geofence Location & Radius
+                      </label>
+                      <p className="text-[10px] text-muted-foreground">
+                        Drag map to pinpoint class location
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border ring-offset-2 focus-within:ring-2 focus-within:ring-brand-primary/20">
-                    <MapContainer
-                      center={[newSession.lat, newSession.lng]}
-                      zoom={17}
-                      className="h-full w-full"
-                    >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <Marker
-                        position={[newSession.lat, newSession.lng]}
-                        icon={getPickerIcon()}
-                      />
-                      <Circle
-                        center={[newSession.lat, newSession.lng]}
-                        pathOptions={{
-                          color: "#2563eb",
-                          fillColor: "#2563eb",
-                          fillOpacity: 0.1,
-                          weight: 1,
-                        }}
-                        radius={50}
-                      />
-                      <LocationMarker
-                        onLocationSelect={(lat, lng) =>
-                          setNewSession((prev) => ({ ...prev, lat, lng }))
-                        }
-                      />
-                    </MapContainer>
+                  <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-border ring-offset-2 focus-within:ring-2 focus-within:ring-brand-primary/20">
+                    <TeacherLocationPicker
+                      lat={newSession.lat}
+                      lng={newSession.lng}
+                      onLocationSelect={(lat, lng) =>
+                        setNewSession((prev) => ({ ...prev, lat, lng }))
+                      }
+                    />
+
                     <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
-                      Click map to update pin
+                      Selected: {newSession.lat.toFixed(5)},{" "}
+                      {newSession.lng.toFixed(5)}
                     </div>
                   </div>
                 </div>
@@ -560,10 +457,14 @@ export default function TeacherDashboardPage() {
                   </div>
                   <div className="text-sm">
                     <span className="font-semibold text-foreground">
-                      Secure Verification
+                      Verification Zone
                     </span>
                     <p className="text-muted-foreground">
-                      Students must be within 50m of this location to attend.
+                      Students must be within{" "}
+                      <span className="font-bold text-foreground">
+                        {newSession.radius}m
+                      </span>{" "}
+                      of this location to check in.
                     </p>
                   </div>
                 </div>

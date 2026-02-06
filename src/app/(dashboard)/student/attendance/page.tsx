@@ -42,19 +42,6 @@ export default function StudentAttendanceView() {
       colorClass: "brand-primary",
     },
     {
-      id: 2,
-      course: "Chemistry 201",
-      prof: "Prof. Miller",
-      room: "Lab B",
-      date: "Nov 13, 2023",
-      time: "11:13 AM",
-      status: "Late",
-      signal: "8m",
-      gps: "Accuracy",
-      icon: BookOpen,
-      colorClass: "brand-primary",
-    },
-    {
       id: 3,
       course: "Calculus II",
       prof: "Prof. Evans",
@@ -66,20 +53,7 @@ export default function StudentAttendanceView() {
       gps: "No Signal",
       icon: BookOpen,
       colorClass: "brand-primary",
-    },
-    {
-      id: 4,
-      course: "Art History 105",
-      prof: "Prof. Klein",
-      room: "Studio 4",
-      date: "Nov 10, 2023",
-      time: "Pending Review",
-      status: "Disputed",
-      signal: "Appeal",
-      gps: "Manual Review",
-      icon: FileText,
-      colorClass: "blue",
-    },
+    }
   ];
 
   const filteredData = attendanceData.filter((item) => {
@@ -319,11 +293,6 @@ export default function StudentAttendanceView() {
                 >
                   {/* Column 1: Course Info */}
                   <div className="col-span-12 md:col-span-4 flex items-center gap-4">
-                    <div
-                      className={`h-12 w-12 rounded-2xl ${bgColor} border flex items-center justify-center shrink-0 transition-all duration-300 ${hoverBgColor}`}
-                    >
-                      <record.icon size={20} />
-                    </div>
                     <div>
                       <p
                         className={`font-bold text-foreground text-base transition-colors ${hoverTextColor}`}
@@ -408,16 +377,7 @@ export default function StudentAttendanceView() {
                         >
                           {record.signal}
                         </span>
-                      </div>
-                      {record.status === "Absent" ? (
-                        <button className="text-[11px] text-brand-primary font-bold hover:underline">
-                          Appeal?
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground font-medium">
-                          {record.gps}
-                        </span>
-                      )}
+                      </div>  
                     </div>
                   </div>
 

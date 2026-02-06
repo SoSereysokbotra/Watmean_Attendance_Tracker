@@ -50,7 +50,7 @@ const SidebarItem = ({
     <div
       className={`flex items-center ${
         isOpen ? "gap-3 px-3" : "justify-center px-2"
-      } py-2 rounded-lg cursor-pointer mb-1 transition-colors relative group ${
+      } py-2 rounded-lg cursor-pointer mb-5 transition-colors relative group ${
         isActive
           ? "bg-brand-primary/10 text-brand-primary font-medium"
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -86,9 +86,9 @@ const SidebarSection = ({
   children: React.ReactNode;
   isOpen: boolean;
 }) => (
-  <div className="mb-6">
+  <div className="mb-8">
     {isOpen && (
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-5 px-3">
         {title}
       </h3>
     )}
@@ -108,13 +108,13 @@ export default function TeacherSidebar({
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-card h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
     >
       {/* Profile Area */}
       <div
         className={`flex items-center ${
           isOpen ? "px-6 py-4 gap-3" : "justify-center py-4"
-        } border-b border-border sticky top-0 bg-card/80 backdrop-blur-md z-10`}
+        } border-b border-border sticky top-0 bg-brand-dark/80 dark:bg-background/80 backdrop-blur-md z-10`}
       >
         <div className="relative shrink-0">
           <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
@@ -125,7 +125,7 @@ export default function TeacherSidebar({
 
         {isOpen && (
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm truncate">
+            <h3 className="font-semibold text-brand-light text-sm truncate">
               {teacherName}
             </h3>
             <p className="text-xs text-muted-foreground truncate">

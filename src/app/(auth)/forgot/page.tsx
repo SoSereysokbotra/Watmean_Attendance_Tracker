@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     }
     if (hasError) return;
 
-    router.push("../verify");
+    router.push("/forgot/verify");
   };
 
   return (
@@ -88,13 +88,13 @@ export default function ForgotPasswordPage() {
             />
             <FormError message={fieldErrors.email} />
           </div>
-            <button
-              type="submit"
-              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
-            >
-              Reset Password
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </button>
+          <button
+            type="submit"
+            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
+          >
+            Reset Password
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
         </form>
 
         {/* Help Footer */}

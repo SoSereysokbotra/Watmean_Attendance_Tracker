@@ -4,11 +4,15 @@ import { useState } from "react";
 import {
   Download,
   Calendar as CalendarIcon,
-  Users,
   TrendingUp,
   ArrowUpRight,
   MoreHorizontal,
   Search,
+  BookOpen,
+  Users,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -23,30 +27,59 @@ import {
   Cell,
 } from "recharts";
 
+import { Calendar } from "../../../../components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../../../components/ui/popover";
+import { format } from "date-fns";
+
+// --- Mock Data ---
 const reports = [
   {
     id: 1,
     className: "Physics 101: Mechanics",
+    code: "PHY-101",
+    room: "Lecture Hall A",
     date: "2026-01-25",
     present: 24,
     absent: 4,
     rate: 86,
+    status: "Good",
   },
   {
     id: 2,
     className: "Chemistry 201: Organic",
+    code: "CHE-201",
+    room: "Lab B",
     date: "2026-01-24",
     present: 22,
     absent: 6,
     rate: 79,
+    status: "Warning",
   },
   {
     id: 3,
     className: "Math 301: Calculus",
+    code: "MAT-301",
+    room: "Room 304",
     date: "2026-01-23",
     present: 25,
     absent: 3,
     rate: 89,
+    status: "Good",
+  },
+  {
+    id: 4,
+    className: "Art History: Modern",
+    code: "ART-105",
+    room: "Studio 4",
+    date: "2026-01-22",
+    present: 18,
+    absent: 10,
+    rate: 64,
+    status: "Critical",
   },
 ];
 
@@ -60,89 +93,147 @@ const trendData = [
 
 export default function ReportsPage() {
   const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const filteredReports = reports.filter(
-    (report) =>
-      (!fromDate || report.date >= fromDate) &&
-      (!toDate || report.date <= toDate),
-  );
-
+  // Calculate simple stats
   const avgRate = Math.round(
-    filteredReports.reduce((acc, curr) => acc + curr.rate, 0) /
-      (filteredReports.length || 1),
+    reports.reduce((acc, curr) => acc + curr.rate, 0) / (reports.length || 1),
   );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-screen relative overflow-hidden">
+      {/* Background Blobs (Copied from Student View) */}
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-brand-primary/10 blur-[100px] -z-10 rounded-full" />
+      <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-rose-100/20 dark:bg-rose-900/10 blur-[100px] -z-10 rounded-full" />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Class Reports
+          </h1>
+          <p className="text-muted-foreground mt-2 font-medium">
             Attendance analytics for Spring Semester 2026
           </p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex items-center gap-2 bg-card px-3 py-2 rounded-xl border border-border">
-            <CalendarIcon size={16} className="text-muted-foreground" />
-            <input
-              type="date"
-              className="bg-transparent border-none text-sm focus:ring-0 text-foreground p-0"
-              onChange={(e) => setFromDate(e.target.value)}
-            />
-          </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all">
-            <Download size={16} /> Export
+        <div className="flex items-center gap-3">
+          {/* WRAP THE BUTTON IN POPOVER */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all">
+                <CalendarIcon size={16} />
+                {/* Optional: Show selected date or just "History" */}
+                {date ? format(date, "PPP") : "History"}
+              </button>
+            </PopoverTrigger>
+
+            {/* THE CALENDAR CONTENT */}
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* DOWNLOAD BUTTON (Unchanged) */}
+          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95">
+            <Download size={16} /> Download Log
           </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            Avg. Attendance
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold">{avgRate}%</span>
-            <span className="text-sm text-emerald-600 font-medium flex items-center">
-              <ArrowUpRight size={14} /> 2.4%
-            </span>
+      {/* Stats Grid (Refactored to match Student 'Summary Section') */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-4">
+        {[
+          {
+            label: "Avg. Attendance",
+            val: `${avgRate}%`,
+            sub: "Up 2.4% vs last week",
+            trend: "Good",
+            accent: "bg-emerald-500",
+            icon: <TrendingUp size={80} />,
+            colorClass: "text-emerald-600 dark:text-emerald-400",
+          },
+          {
+            label: "Active Students",
+            val: "142",
+            sub: "Total enrolled",
+            trend: "Stable",
+            accent: "bg-blue-500",
+            icon: <Users size={80} />,
+            colorClass: "text-blue-600 dark:text-blue-400",
+          },
+          {
+            label: "Total Sessions",
+            val: reports.length.toString(),
+            sub: "This semester",
+            trend: "On Track",
+            accent: "bg-amber-500",
+            icon: <Clock size={80} />,
+            colorClass: "text-amber-600 dark:text-amber-400",
+          },
+          {
+            label: "At Risk",
+            val: "3",
+            sub: "Students < 75%",
+            trend: "Action Needed",
+            accent: "bg-rose-500",
+            icon: <AlertCircle size={80} />,
+            colorClass: "text-rose-600 dark:text-rose-400",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="relative flex flex-col group cursor-default transition-all duration-300"
+          >
+            {/* The colored top bar */}
+            <div
+              className={`h-1 w-12 rounded-full mb-6 transition-all duration-500 group-hover:w-20 ${stat.accent}`}
+            />
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-5xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform origin-left">
+                {stat.val}
+              </h3>
+              {/* Trend Badge */}
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  stat.trend === "Action Needed"
+                    ? "bg-rose-50 dark:bg-rose-900/30 border-rose-100 dark:border-rose-800 text-rose-600"
+                    : "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800 text-emerald-600"
+                }`}
+              >
+                {stat.trend}
+              </span>
+            </div>
+            <div className="mt-2">
+              <p className="text-lg font-bold text-foreground tracking-wide uppercase text-[11px]">
+                {stat.label}
+              </p>
+              <p className="text-sm font-medium text-muted-foreground mt-1">
+                {stat.sub}
+              </p>
+            </div>
+            {/* Hover Icon Effect */}
+            <div
+              className={`absolute -right-4 top-0 opacity-0 group-hover:opacity-10 group-hover:translate-x-4 transition-all duration-500 ${stat.colorClass}`}
+            >
+              {stat.icon}
+            </div>
           </div>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            Active Students
-          </p>
-          <span className="text-3xl font-bold">142</span>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            Total Sessions
-          </p>
-          <span className="text-3xl font-bold">{reports.length}</span>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            At Risk
-          </p>
-          <span className="text-3xl font-bold text-rose-600">3</span>
-          <p className="text-sm text-muted-foreground">students</p>
-        </div>
+        ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-            <TrendingUp size={18} className="text-muted-foreground" />{" "}
-            Attendance Trend
+            Weekly Trend
           </h3>
-          <div className="h-[280px] w-full">
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
                 <defs>
@@ -153,14 +244,15 @@ export default function ReportsPage() {
                     x2="0"
                     y2="1"
                   >
+                    {/* Using brand-primary for the gradient top */}
                     <stop
                       offset="5%"
-                      stopColor="var(--brand-primary)"
-                      stopOpacity={0.1}
+                      stopColor="hsl(var(--brand-primary))"
+                      stopOpacity={0.2}
                     />
                     <stop
                       offset="95%"
-                      stopColor="var(--brand-primary)"
+                      stopColor="hsl(var(--brand-primary))"
                       stopOpacity={0}
                     />
                   </linearGradient>
@@ -174,26 +266,28 @@ export default function ReportsPage() {
                   dataKey="date"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--brand-dark))", fontSize: 12 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  tick={{ fill: "hsl(var(--brand-dark))", fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: "8px",
+                    borderRadius: "12px",
                     border: "1px solid var(--border)",
                     backgroundColor: "var(--card)",
+                    color: "hsl(var(--brand-dark))",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="rate"
-                  stroke="var(--brand-primary)"
-                  strokeWidth={2}
+                  stroke="hsl(var(--brand-primary))"
+                  strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorGradient)"
                 />
@@ -202,23 +296,23 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6">
-            Class Performance
+            Performance
           </h3>
-          <div className="h-[280px] w-full">
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={reports} barGap={4}>
                 <XAxis type="number" hide />
                 <YAxis
                   dataKey="className"
                   type="category"
-                  width={110}
+                  width={100}
                   tickFormatter={(val: string) => val.split(":")[0]}
                   tick={{
-                    fill: "var(--muted-foreground)",
+                    fill: "hsl(var(--brand-dark))",
                     fontSize: 13,
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -226,104 +320,30 @@ export default function ReportsPage() {
                 <Tooltip
                   cursor={{ fill: "transparent" }}
                   contentStyle={{
-                    borderRadius: "8px",
+                    borderRadius: "12px",
                     border: "1px solid var(--border)",
                     backgroundColor: "var(--card)",
+                    color: "hsl(var(--brand-dark))",
                   }}
                 />
-                <Bar dataKey="rate" barSize={24} radius={[4, 4, 4, 4]}>
+                <Bar dataKey="rate" barSize={32} radius={[6, 6, 6, 6]}>
                   {reports.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={
                         entry.rate > 80
-                          ? "var(--brand-primary)"
-                          : "var(--muted)"
+                          ? "hsl(var(--brand-primary))"
+                          : entry.rate < 70
+                            ? "var(--destructive)"
+                            : "hsl(var(--brand-dark))" /* Changed muted to brand-dark */
                       }
+                      fillOpacity={0.9}
                     />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex justify-between items-center">
-          <h3 className="font-bold text-foreground text-lg">Recent Sessions</h3>
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="Search classes..."
-              className="pl-9 pr-4 py-2 bg-muted border-none rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 outline-none w-64"
-            />
-          </div>
-        </div>
-
-        <div className="divide-y divide-border">
-          {filteredReports.map((report) => (
-            <div
-              key={report.id}
-              className="px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between"
-            >
-              <div className="flex-1">
-                <span className="font-semibold text-foreground">
-                  {report.className}
-                </span>
-              </div>
-              <div className="flex-1 text-sm text-muted-foreground">
-                {new Date(report.date).toLocaleDateString("en-US", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] text-muted-foreground font-bold"
-                    >
-                      S{i + 1}
-                    </div>
-                  ))}
-                  <div className="w-6 h-6 rounded-full bg-muted/50 border-2 border-card flex items-center justify-center text-[10px] text-muted-foreground font-bold">
-                    +{report.present - 3}
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`font-bold ${report.rate > 80 ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {report.rate}%
-                  </span>
-                  <div className="flex-1 h-1.5 w-24 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand-primary"
-                      style={{
-                        width: `${report.rate}%`,
-                        opacity: report.rate / 100,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <button className="text-muted-foreground hover:text-foreground transition-colors">
-                  <MoreHorizontal size={20} />
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
