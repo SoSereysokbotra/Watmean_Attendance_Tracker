@@ -1,10 +1,10 @@
 "use client";
 
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { NextClassCard } from "@/components/dashboard/NextClassCard";
-import { ScheduleItem } from "@/components/dashboard/ScheduleItem";
-import { DashboardSection } from "@/components/dashboard/DashboardSection";
+import { DashboardHeader } from "@/components/student/DashboardHeader";
+import { StatsCard } from "@/components/student/StatsCard";
+import { NextClassCard } from "@/components/student/NextClassCard";
+import { ScheduleItem } from "@/components/student/ScheduleItem";
+import { DashboardSection } from "@/components/student/DashboardSection";
 import { TrendingUp, Clock, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -32,11 +32,7 @@ export default function DashboardPage() {
           checkInPath="/student/checkin"
         />
 
-        <StatsCard
-          title="Late Arrivals"
-          value="2"
-          icon={<Clock size={24} />}
-        />
+        <StatsCard title="Late Arrivals" value="2" icon={<Clock size={24} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
