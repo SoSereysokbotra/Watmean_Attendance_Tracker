@@ -16,9 +16,15 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import Link from "next/link";
 
 // Mock Data Interfaces
@@ -36,7 +42,6 @@ interface Student {
 interface ClassDetails {
   id: string;
   name: string;
-  code: string;
   description: string;
   schedule: string;
   location: string;
@@ -54,16 +59,15 @@ export default function ClassDetailsPage({
   // Unwrap params using React.use()
   const { id } = use(params);
 
-  const [activeTab, setActiveTab] = useState<
-    "students" | "assignments"
-  >("students");
+  const [activeTab, setActiveTab] = useState<"students" | "assignments">(
+    "students",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Mock Class Data (In a real app, fetch this based on `id`)
   const classData: ClassDetails = {
     id: id,
     name: "Physics 101: Mechanics",
-    code: "PHY101",
     description:
       "Introduction to classical mechanics, Newton's laws, energy, and momentum.",
     schedule: "Mon, Wed, Fri • 08:00-10:00",
@@ -71,11 +75,11 @@ export default function ClassDetailsPage({
     nextSession: "Tomorrow, 08:00 AM",
     totalStudents: 28,
     avgAttendance: 94,
-    avgGrade: 86,
+    avgGrade: 0,
   };
 
   // Mock Student List
-  const [students] = useState<Student[]>([
+  const [students, setStudents] = useState<Student[]>([
     {
       id: "1",
       name: "Alice Johnson",
@@ -95,7 +99,7 @@ export default function ClassDetailsPage({
       grade: "B",
       gradeScore: 82,
       status: "late",
-    }
+    },
   ]);
 
   // Filter students based on search
@@ -104,6 +108,10 @@ export default function ClassDetailsPage({
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const removeStudent = (studentId: string) => {
+    setStudents(students.filter((s) => s.id !== studentId));
+  };
 
   const getAttendanceColor = (rate: number) => {
     if (rate >= 90)
@@ -131,9 +139,6 @@ export default function ClassDetailsPage({
               <h1 className="text-3xl font-bold text-foreground">
                 {classData.name}
               </h1>
-              <span className="px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-xs font-bold border border-brand-primary/20">
-                {classData.code}
-              </span>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
               <div className="flex items-center gap-1.5">
@@ -346,9 +351,23 @@ export default function ClassDetailsPage({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <button className="text-muted-foreground hover:text-brand-primary p-2 rounded-full hover:bg-brand-primary/10 transition-colors">
-                              <MoreHorizontal size={18} />
-                            </button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="text-muted-foreground hover:text-brand-primary p-2 rounded-full hover:bg-brand-primary/10 transition-colors">
+                                  <MoreHorizontal size={18} />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-40 p-1" align="end">
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 h-9"
+                                  onClick={() => removeStudent(student.id)}
+                                >
+                                  <Trash size={16} className="mr-2" />
+                                  Remove
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                           </td>
                         </tr>
                       ))}

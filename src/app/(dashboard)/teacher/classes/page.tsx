@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import {
-  Search,
-  Filter,
-  Plus,
-  MoreVertical,
-  Users,
   Calendar,
+  Filter,
   MapPin,
-  TrendingUp,
-  Clock,
-  BookOpen,
-  Activity,
-  BarChart3,
+  MoreVertical,
+  Plus,
+  Search,
+  Trash,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import Link from "next/link";
 
 interface Class {
@@ -51,6 +52,10 @@ export default function TeacherClassesPage() {
       cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cls.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const deleteClass = (id: string) => {
+    setClasses(classes.filter((c) => c.id !== id));
+  };
 
   const getStatusColor = (status: Class["status"]) => {
     switch (status) {
@@ -116,9 +121,23 @@ export default function TeacherClassesPage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">{cls.code}</p>
               </div>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical size={20} />
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-muted-foreground hover:text-foreground p-1 hover:bg-muted rounded-full transition-colors">
+                    <MoreVertical size={20} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-40 p-1" align="end">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 h-9"
+                    onClick={() => deleteClass(cls.id)}
+                  >
+                    <Trash size={16} className="mr-2" />
+                    Delete Class
+                  </Button>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-3 mb-6">
@@ -185,10 +204,6 @@ export default function TeacherClassesPage() {
           <p className="text-muted-foreground mb-6">
             Try adjusting your search or create a new class
           </p>
-          <Button className="bg-brand-primary hover:bg-brand-primary/90">
-            <Plus size={16} className="mr-2" />
-            Create New Class
-          </Button>
         </div>
       )}
     </div>

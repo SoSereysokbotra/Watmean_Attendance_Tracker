@@ -1,7 +1,22 @@
 "use client";
 
-import React from "react";
-import { Search, Filter, ArrowRight, Calendar, MapPin } from "lucide-react";
+import { useState } from "react";
+import {
+  Search,
+  Filter,
+  ArrowRight,
+  Calendar,
+  MapPin,
+  ListFilter,
+  TrendingUp,
+  Archive,
+} from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 const classes = [
   {
@@ -21,7 +36,7 @@ const classes = [
     schedule: "Tue, Thu 10:00",
     progress: 60,
     colorTheme: "emerald",
-  }
+  },
 ];
 
 const getColorStyles = (theme: string) => {
@@ -58,6 +73,37 @@ const getColorStyles = (theme: string) => {
 };
 
 export default function ClassesPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "active" | "completed">(
+    "all",
+  );
+  const [sortBy, setSortBy] = useState<"name" | "progress">("name");
+
+  const filteredClasses = classes
+    .filter((cls) => {
+      // Search Filter
+      const matchesSearch =
+        cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cls.prof.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Status Filter (Mock logic as data doesn't have status field yet)
+      const matchesStatus =
+        filterType === "all"
+          ? true
+          : filterType === "active"
+            ? cls.progress < 100
+            : cls.progress === 100;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.progress - a.progress; // Higher progress first
+      }
+    });
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -78,62 +124,132 @@ export default function ClassesPage() {
             <input
               type="text"
               placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none w-full sm:w-64 transition-all"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all">
-            <Filter size={18} /> Filters
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all">
+                <Filter size={18} /> Filters
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="end">
+              <div className="space-y-1">
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  Sort By
+                </div>
+                <Button
+                  variant={sortBy === "name" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setSortBy("name")}
+                >
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  Name (A-Z)
+                </Button>
+                <Button
+                  variant={sortBy === "progress" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setSortBy("progress")}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Progress (High-Low)
+                </Button>
+
+                <div className="h-px bg-border my-1" />
+
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  Status
+                </div>
+                <Button
+                  variant={filterType === "all" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("all")}
+                >
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  All Courses
+                </Button>
+                <Button
+                  variant={filterType === "active" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("active")}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Active
+                </Button>
+                <Button
+                  variant={filterType === "completed" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("completed")}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Completed
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {classes.map((cls) => {
-          const colors = getColorStyles(cls.colorTheme);
-          return (
-            <div
-              key={cls.id}
-              className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
-            >
-              <h3 className="text-xl font-bold text-foreground mb-1 group-hover:text-brand-primary transition-colors">
-                {cls.name}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">{cls.prof}</p>
+        {filteredClasses.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-muted-foreground">
+            No courses found matching your criteria.
+          </div>
+        ) : (
+          filteredClasses.map((cls) => {
+            const colors = getColorStyles(cls.colorTheme);
+            return (
+              <div
+                key={cls.id}
+                className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
+              >
+                <h3 className="text-xl font-bold text-foreground mb-1 group-hover:text-brand-primary transition-colors">
+                  {cls.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">{cls.prof}</p>
 
-              {/* Schedule and Room Section */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 bg-muted rounded-2xl p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                    <Calendar size={16} className="text-amber-500" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">
-                      Schedule
-                    </span>
+                {/* Schedule and Room Section */}
+                <div className="flex gap-4 mb-6">
+                  <div className="flex-1 bg-muted rounded-2xl p-4">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Calendar size={16} className="text-amber-500" />
+                      <span className="text-xs font-semibold uppercase tracking-wider">
+                        Schedule
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">
+                      {cls.schedule}
+                    </p>
                   </div>
-                  <p className="text-sm font-bold text-foreground">
-                    {cls.schedule}
-                  </p>
+                  <div className="flex-1 bg-muted rounded-2xl p-4">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <MapPin size={16} className="text-rose-500" />
+                      <span className="text-xs font-semibold uppercase tracking-wider">
+                        Room
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">
+                      {cls.room}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 bg-muted rounded-2xl p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                    <MapPin size={16} className="text-rose-500" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">
-                      Room
-                    </span>
-                  </div>
-                  <p className="text-sm font-bold text-foreground">
-                    {cls.room}
-                  </p>
+
+                <div className="space-y-3 mt-auto">
+                  <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300">
+                    Continue Learning <ArrowRight size={16} />
+                  </button>
                 </div>
               </div>
-
-              <div className="space-y-3 mt-auto">
-                <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300">
-                  Continue Learning <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

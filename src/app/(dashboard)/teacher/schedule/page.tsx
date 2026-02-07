@@ -3,15 +3,15 @@
 import { useState, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
-  Clock,
   MapPin,
   ArrowRight,
   Bell,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   List,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const schedule = [
   {
@@ -44,6 +44,7 @@ const schedule = [
 ];
 
 export default function SchedulePage() {
+  const router = useRouter();
   // View State: 'day' | 'month'
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const [activeDate, setActiveDate] = useState("2026-01-26");
@@ -141,8 +142,6 @@ export default function SchedulePage() {
       </div>
 
       <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-        {/* --- LEFT COLUMN: Date Stack (Hidden in Month View for cleaner UI, or kept optionally) --- */}
-        {/* We hide it on mobile/tablet when in month view to give the calendar space, but keep on desktop */}
         <div
           className={`space-y-6 ${viewMode === "month" ? "hidden lg:block opacity-50 pointer-events-none" : ""}`}
         >
@@ -252,13 +251,7 @@ export default function SchedulePage() {
                       )}
                     </div>
 
-                    <div className="flex-1 bg-card rounded-2xl p-5 border border-border shadow-sm group-hover:shadow-lg group-hover:border-brand-primary/30 transition-all duration-300">
-                      <div className="flex justify-between items-start mb-3">
-                        <button className="text-muted-foreground hover:text-foreground">
-                          <MoreVertical size={16} />
-                        </button>
-                      </div>
-
+                    <div className="flex-1 bg-card rounded-2xl p-5 border border-border shadow-sm group-hover:shadow-lg group-hover:border-brand-primary/30 transition-all duration-300 p-8">
                       <div className="mb-4">
                         <h3 className="text-lg md:text-xl font-extrabold text-foreground mb-1">
                           {session.className}
@@ -275,9 +268,12 @@ export default function SchedulePage() {
                           <div className="w-6 h-6 rounded-full bg-muted/80 border-2 border-card" />
                         </div>
 
-                        <button className="flex items-center gap-1 text-sm font-bold text-brand-primary hover:text-brand-primary/80 transition-colors">
+                        <Link
+                          href={`/teacher/classes/${session.id}`}
+                          className="flex items-center gap-1 text-sm font-bold text-brand-primary hover:text-brand-primary/80 transition-colors"
+                        >
                           View Details <ArrowRight size={14} />
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>

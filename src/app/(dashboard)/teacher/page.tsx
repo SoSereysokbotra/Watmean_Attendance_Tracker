@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import {
   BookOpen,
@@ -7,20 +8,22 @@ import {
   TrendingUp,
   AlertCircle,
   Plus,
-  Navigation,
-  Clock,
-  Calendar,
   MoreHorizontal,
   MapPin,
   X,
   CheckCircle2,
-  Search,
-  Bell,
+  Eye,
+  FileEdit,
+  Trash,
+  Clock,
 } from "lucide-react";
-
-// --- Map Imports ---
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
-import { div } from "framer-motion/client";
 
 const TeacherLocationPicker = dynamic(
   () => import("@/components/teacher/TeacherLocationPicker"),
@@ -35,8 +38,10 @@ const TeacherLocationPicker = dynamic(
 );
 
 export default function TeacherDashboardPage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<
     "overview" | "students" | "analytics"
   >("overview");
@@ -58,8 +63,47 @@ export default function TeacherDashboardPage() {
 
   const handleCreateSession = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Launching Session:", newSession);
+    if (editingSessionId) {
+      console.log("Updating Session:", editingSessionId, newSession);
+      // Logic to update the session in the list would go here
+      setRecentSessions((prev) =>
+        prev.map((session) =>
+          session.id === editingSessionId
+            ? {
+                ...session,
+                title: newSession.className,
+                room: newSession.room,
+                time: `${newSession.startTime} - ${newSession.endTime}`,
+              }
+            : session,
+        ),
+      );
+    } else {
+      console.log("Launching Session:", newSession);
+      // Logic to add new session would go here
+    }
     setIsModalOpen(false);
+    setEditingSessionId(null);
+  };
+
+  const handleEditSession = (session: any) => {
+    const [start, end] = session.time.split(" - ");
+    setNewSession({
+      className: session.title,
+      room: session.room || "",
+      date: new Date().toISOString().split("T")[0],
+      startTime: start || "08:00",
+      endTime: end || "10:00",
+      radius: "50",
+      lat: 11.5564,
+      lng: 104.9282,
+    });
+    setEditingSessionId(session.id);
+    setIsModalOpen(true);
+  };
+
+  const handleViewDetails = (id: number) => {
+    router.push(`/teacher/classes/${id}`);
   };
 
   // Mock Data
@@ -94,7 +138,7 @@ export default function TeacherDashboardPage() {
     },
   ];
 
-  const recentSessions = [
+  const [recentSessions, setRecentSessions] = useState([
     {
       id: 1,
       title: "Physics 101: Mechanics",
@@ -104,7 +148,11 @@ export default function TeacherDashboardPage() {
       total: 30,
       room: "Room 304",
     },
-  ];
+  ]);
+
+  const deleteSession = (id: number) => {
+    setRecentSessions((prev) => prev.filter((session) => session.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-brand-primary/30 pb-20">
@@ -120,7 +168,20 @@ export default function TeacherDashboardPage() {
             </p>
           </div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingSessionId(null);
+              setNewSession({
+                className: "",
+                room: "",
+                date: new Date().toISOString().split("T")[0],
+                startTime: "08:00",
+                endTime: "10:00",
+                radius: "50",
+                lat: 11.5564,
+                lng: 104.9282,
+              });
+              setIsModalOpen(true);
+            }}
             className="group flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 active:scale-95"
           >
             <Plus className="h-5 w-5" />
@@ -254,9 +315,42 @@ export default function TeacherDashboardPage() {
                             {session.status}
                           </span>
                         )}
-                        <button className="text-muted-foreground hover:text-foreground">
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted transition-colors">
+                              <MoreHorizontal className="h-5 w-5" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-1" align="end">
+                            <div className="space-y-1">
+                              <Button
+                                variant="ghost"
+                                className="w-full justify-start h-8 text-sm font-normal"
+                                onClick={() => handleViewDetails(session.id)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                className="w-full justify-start h-8 text-sm font-normal"
+                                onClick={() => handleEditSession(session)}
+                              >
+                                <FileEdit className="mr-2 h-4 w-4" />
+                                Edit Session
+                              </Button>
+                              <div className="h-px bg-border my-1" />
+                              <Button
+                                variant="ghost"
+                                onClick={() => deleteSession(session.id)}
+                                className="w-full justify-start h-8 text-sm font-normal text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                              >
+                                <Trash className="mr-2 h-4 w-4" />
+                                Delete
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   ))}
@@ -298,10 +392,12 @@ export default function TeacherDashboardPage() {
             <div className="flex items-center justify-between border-b border-border px-8 py-6">
               <div>
                 <h2 className="text-xl font-bold text-foreground">
-                  Launch New Session
+                  {editingSessionId ? "Edit Session" : "Launch New Session"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Define parameters for student check-in.
+                  {editingSessionId
+                    ? "Update session parameters."
+                    : "Define parameters for student check-in."}
                 </p>
               </div>
               <button
@@ -484,7 +580,7 @@ export default function TeacherDashboardPage() {
                 form="session-form"
                 className="flex-1 rounded-xl bg-brand-primary py-3.5 font-bold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40"
               >
-                Launch Session
+                {editingSessionId ? "Update Session" : "Launch Session"}
               </button>
             </div>
           </div>

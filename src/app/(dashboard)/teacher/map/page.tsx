@@ -123,9 +123,6 @@ export default function TeacherLiveMap() {
                   placeholder="Find class..."
                 />
               </div>
-              <button className="p-2 bg-brand-primary text-background rounded-lg hover:opacity-90 transition-opacity shadow-sm">
-                <Plus size={18} />
-              </button>
             </div>
           </div>
         </div>

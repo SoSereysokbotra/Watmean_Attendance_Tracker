@@ -14,7 +14,7 @@ export default function DashboardPage() {
       <DashboardHeader
         studentName="Sarah"
         todayClasses={2}
-        currentSession="Fall Semester 2024"
+        currentSession="Fall Semester 2026"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

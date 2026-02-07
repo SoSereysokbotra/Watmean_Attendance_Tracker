@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import StudentSidebar from "../../../components/Sidebar/StudentSidebar";
-import { Bell, Search, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function StudentLayout({

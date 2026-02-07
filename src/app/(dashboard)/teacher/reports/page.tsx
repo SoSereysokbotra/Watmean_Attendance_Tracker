@@ -5,14 +5,9 @@ import {
   Download,
   Calendar as CalendarIcon,
   TrendingUp,
-  ArrowUpRight,
-  MoreHorizontal,
-  Search,
-  BookOpen,
   Users,
   AlertCircle,
   Clock,
-  CheckCircle2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -26,7 +21,6 @@ import {
   Bar,
   Cell,
 } from "recharts";
-
 import { Calendar } from "../../../../components/ui/calendar";
 import {
   Popover,

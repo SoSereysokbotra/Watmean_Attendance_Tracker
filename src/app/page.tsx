@@ -3,19 +3,9 @@
 import Link from "next/link";
 import { ModeToggle } from "../components/mode-toggle";
 import { motion, Variants } from "framer-motion";
-import { BlurReveal } from "../components/ui/blur-reveal";
 import { TypingAnimation } from "../components/typing-animation";
 import {
   MapPin,
-  ShieldCheck,
-  Clock,
-  ChevronRight,
-  GraduationCap,
-  LayoutDashboard,
-  Smartphone,
-  Users,
-  Fingerprint,
-  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 
