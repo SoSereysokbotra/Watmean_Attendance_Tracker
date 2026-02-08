@@ -1,23 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ArrowRight,
-  Lock,
-  Eye,
-  EyeOff,
-  Check,
-  ShieldCheck,
-  MapPin,
-} from "lucide-react";
+import { ArrowRight, Lock, Check, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { AuthLayout } from "../../../../components/auth/AuthLayout";
+import { AuthInput } from "../../../../components/ui/AuthInput";
 import { ErrorAlert } from "../../../../components/ui/ErrorAlert";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
 
   // Validation Logic
@@ -75,43 +67,26 @@ export default function ResetPasswordPage() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* New Password Field */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">New Password</label>
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-brand-primary transition-colors" />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="flex h-11 w-full rounded-xl border border-input bg-card px-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            <AuthInput
+              label="New Password"
+              icon={Lock}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
           </div>
 
           {/* Confirm Password Field */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Confirm Password</label>
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-brand-primary transition-colors" />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="flex h-11 w-full rounded-xl border border-input bg-card px-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary transition-all"
-              />
-            </div>
+            <AuthInput
+              label="Confirm Password"
+              icon={Lock}
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+            />
           </div>
 
           {/* Validation Checklist */}
