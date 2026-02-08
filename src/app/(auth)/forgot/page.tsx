@@ -96,17 +96,6 @@ export default function ForgotPasswordPage() {
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </form>
-
-        {/* Help Footer */}
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          Still having trouble?{" "}
-          <Link
-            href="/support"
-            className="font-semibold text-brand-primary hover:underline underline-offset-4"
-          >
-            Contact support
-          </Link>
-        </p>
       </motion.div>
     </AuthLayout>
   );

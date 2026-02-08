@@ -117,7 +117,7 @@ export default function SignupPage() {
             <input
               id="terms"
               type="checkbox"
-              className="h-4 w-4 rounded border bg-card text-brand-primary focus:ring-brand-primary/20"
+              className="h-4 w-4 rounded border bg-card text-brand-primary focus:ring-brand-primary/20 mb-2"
             />
           </div>
           <label
