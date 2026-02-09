@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TokenUtil } from "../utils/token.util";
 import { JwtPayload } from "../types";
-
-<<<<<<< HEAD
-export async function authenticate(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const token = authHeader.substring(7);
-=======
 import { authConfig } from "../config";
 
 export async function authenticate(request: NextRequest) {
@@ -27,7 +16,6 @@ export async function authenticate(request: NextRequest) {
   if (!token) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
->>>>>>> feature/backend-auth
 
   try {
     const payload = TokenUtil.verifyAccessToken(token) as JwtPayload;

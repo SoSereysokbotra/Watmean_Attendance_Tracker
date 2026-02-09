@@ -198,8 +198,6 @@ export class AuthService {
     };
   }
 
-<<<<<<< HEAD
-=======
   static async resendVerificationCode(): Promise<AuthResponse> {
     // Get verification session cookie
     const token = await CookieUtil.getVerificationSessionCookie();
@@ -291,7 +289,6 @@ export class AuthService {
     };
   }
 
->>>>>>> feature/backend-auth
   static async login(request: LoginRequest): Promise<AuthResponse> {
     // Find user
     const user = await UserRepository.findByEmail(request.email);

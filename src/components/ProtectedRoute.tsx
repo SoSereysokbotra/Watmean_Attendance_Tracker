@@ -2,12 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-<<<<<<< HEAD
-import { useAuth } from "@/hooks/useAuth"; // You'll need to create this hook
-
-=======
-import { useAuth } from "@/hooks/useAuth"; 
->>>>>>> feature/backend-auth
+import { useAuth } from "@/hooks/useAuth";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: ("student" | "teacher" | "admin")[];
