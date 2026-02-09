@@ -1,12 +1,19 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+import { useState, useEffect, useRef } from "react";
+>>>>>>> feature/backend-auth
 import { authClient } from "@/lib/auth/utils/client-auth";
 
 interface AuthState {
   user: any | null;
+<<<<<<< HEAD
   accessToken: string | null;
   refreshToken: string | null;
+=======
+>>>>>>> feature/backend-auth
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -14,12 +21,16 @@ interface AuthState {
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
+<<<<<<< HEAD
     accessToken: null,
     refreshToken: null,
+=======
+>>>>>>> feature/backend-auth
     isLoading: true,
     isAuthenticated: false,
   });
 
+<<<<<<< HEAD
   useEffect(() => {
     // Check localStorage for tokens
     const accessToken = localStorage.getItem("accessToken");
@@ -42,6 +53,15 @@ export function useAuth() {
     } else {
       setAuthState((prev) => ({ ...prev, isLoading: false }));
     }
+=======
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
+    refreshTokens();
+>>>>>>> feature/backend-auth
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -49,6 +69,7 @@ export function useAuth() {
       const result = await authClient.login({ email, password });
 
       if (result.success && result.data) {
+<<<<<<< HEAD
         const { accessToken, refreshToken, user } = result.data;
 
         localStorage.setItem("accessToken", accessToken);
@@ -59,6 +80,12 @@ export function useAuth() {
           user,
           accessToken,
           refreshToken,
+=======
+        const { user } = result.data;
+
+        setAuthState({
+          user,
+>>>>>>> feature/backend-auth
           isLoading: false,
           isAuthenticated: true,
         });
@@ -73,14 +100,22 @@ export function useAuth() {
   };
 
   const logout = async () => {
+<<<<<<< HEAD
     const refreshToken = authState.refreshToken;
     if (refreshToken) {
       await authClient.logout(refreshToken);
+=======
+    try {
+      await authClient.logout();
+    } catch (error) {
+      console.error("Logout failed", error);
+>>>>>>> feature/backend-auth
     }
     clearAuth();
   };
 
   const clearAuth = () => {
+<<<<<<< HEAD
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
@@ -89,12 +124,17 @@ export function useAuth() {
       user: null,
       accessToken: null,
       refreshToken: null,
+=======
+    setAuthState({
+      user: null,
+>>>>>>> feature/backend-auth
       isLoading: false,
       isAuthenticated: false,
     });
   };
 
   const refreshTokens = async () => {
+<<<<<<< HEAD
     const refreshToken = authState.refreshToken;
     if (!refreshToken) {
       clearAuth();
@@ -121,6 +161,19 @@ export function useAuth() {
           refreshToken: newRefreshToken,
           user,
         }));
+=======
+    try {
+      const result = await authClient.refreshToken();
+
+      if (result.success && result.data) {
+        const { user } = result.data;
+
+        setAuthState({
+          user,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+>>>>>>> feature/backend-auth
 
         return true;
       } else {

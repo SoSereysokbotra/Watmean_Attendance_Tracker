@@ -9,18 +9,61 @@ import { AuthInput } from "../../../components/ui/AuthInput";
 import { FormError } from "../../../components/ui/FormError";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
-    setGlobalError("Invalid credentials.");
+    setGlobalError("");
+    setFieldErrors({ email: "", password: "" });
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+        credentials: "include", 
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        if (data.data.accessToken) {
+          localStorage.setItem("accessToken", data.data.accessToken);
+        }
+        const role = data.data.user?.role;
+        if (role === "teacher") {
+          router.push("/teacher");
+        } else if (role === "student") {
+          router.push("/student");
+        } else {
+          router.push("/");
+        }
+      } else {
+        setGlobalError(data.message || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setGlobalError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,6 +94,9 @@ export default function LoginPage() {
               icon={Mail}
               type="email"
               placeholder="name@university.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
             />
             <FormError message={fieldErrors.email} />
           </div>
@@ -62,6 +108,9 @@ export default function LoginPage() {
               icon={Lock}
               type="password"
               placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
               rightElement={
                 <Link
                   href="/forgot"
@@ -90,28 +139,11 @@ export default function LoginPage() {
           <div className="space-y-4 pt-2">
             <button
               type="submit"
-              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+              disabled={isLoading}
+              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </button>
-
-            {/* Divider */}
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-border"></div>
-              <span className="flex-shrink-0 mx-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Or continue with
-              </span>
-              <div className="flex-grow border-t border-border"></div>
-            </div>
-
-            {/* SSO Button */}
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted/50 transition-all"
-            >
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              University ID (SSO)
             </button>
           </div>
         </form>

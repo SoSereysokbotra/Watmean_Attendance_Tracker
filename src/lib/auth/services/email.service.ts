@@ -1,4 +1,13 @@
+
 export class EmailService {
+
+import { NodemailerProvider } from "../../email/providers/nodemailer.provider";
+import { getVerificationEmailTemplate } from "../../email/templates/verification.template";
+import { getPasswordResetEmailTemplate } from "../../email/templates/password-reset.template";
+
+export class EmailService {
+  private static provider = new NodemailerProvider();
+
   /**
    * Send a password reset email to the user
    * @param email - The recipient's email address
@@ -8,12 +17,8 @@ export class EmailService {
     email: string,
     code: string,
   ): Promise<void> {
-    // TODO: Implement actual email sending logic (e.g., using Resend, SendGrid, Nodemailer)
-    console.log(`[EmailService] Sending password reset email to ${email}`);
-    console.log(`[EmailService] Password reset code: ${code}`);
-
-    // Simulate API latency
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const html = getPasswordResetEmailTemplate(code);
+    await this.provider.sendEmail(email, "Password Reset", html);
   }
 
   /**
@@ -25,11 +30,16 @@ export class EmailService {
     email: string,
     code: string,
   ): Promise<void> {
+<<<<<<< HEAD
     // TODO: Implement actual email sending logic (e.g., using Resend, SendGrid, Nodemailer)
     console.log(`[EmailService] Sending verification email to ${email}`);
     console.log(`[EmailService] Verification code: ${code}`);
 
     // Simulate API latency
     await new Promise((resolve) => setTimeout(resolve, 500));
+=======
+    const html = getVerificationEmailTemplate(code);
+    await this.provider.sendEmail(email, "Email Verification", html);
+>>>>>>> feature/backend-auth
   }
 }

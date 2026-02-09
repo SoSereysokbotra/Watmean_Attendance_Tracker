@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [globalError, setGlobalError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState({
@@ -22,12 +23,12 @@ export default function SignupPage() {
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError("");
     setFieldErrors({ name: "", email: "", password: "" });
 
-    // Validation
+    // Basic client-side validation
     let hasError = false;
     if (!email) {
       setFieldErrors((prev) => ({ ...prev, email: "Email is required" }));
@@ -44,17 +45,38 @@ export default function SignupPage() {
 
     if (hasError) return;
 
-    // Simulate basic validation success/failure for demo
-    // For now, we'll just simulate a successful navigation if valid
-    // In a real app, you'd call an API here
+    setIsLoading(true);
 
-    // Example: checking if user exists (mock)
-    if (email === "test@university.edu") {
-      setGlobalError("User already exists.");
-      return;
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          fullName: name,
+          password,
+          role: "student", // Default role, you can add a selector if needed
+        }),
+        credentials: "include", // Important for cookies
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to verification page
+        router.push("/verify");
+      } else {
+        // Show error message
+        setGlobalError(data.message || "Signup failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      setGlobalError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-
-    router.push("/verify");
   };
 
   return (
@@ -145,9 +167,10 @@ export default function SignupPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:bg-opacity-90 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 transition-all duration-200"
+          disabled={isLoading}
+          className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:bg-opacity-90 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          Create Account
+          {isLoading ? "Creating Account..." : "Create Account"}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </button>
       </form>

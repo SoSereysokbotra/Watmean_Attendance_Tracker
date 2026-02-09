@@ -198,6 +198,100 @@ export class AuthService {
     };
   }
 
+<<<<<<< HEAD
+=======
+  static async resendVerificationCode(): Promise<AuthResponse> {
+    // Get verification session cookie
+    const token = await CookieUtil.getVerificationSessionCookie();
+    if (!token) {
+      return {
+        success: false,
+        message: "Verification session expired. Please login again.",
+      };
+    }
+
+    // Verify token
+    let payload;
+    try {
+      payload = TokenUtil.verifyVerificationToken(token);
+    } catch (error) {
+      await CookieUtil.clearVerificationSessionCookie();
+      return {
+        success: false,
+        message: "Invalid or expired verification token.",
+      };
+    }
+
+    // Get user
+    const user = await UserRepository.findById(payload.id);
+    if (!user) {
+      return {
+        success: false,
+        message: "User not found.",
+      };
+    }
+
+    if (user.is_verified) {
+      return {
+        success: false,
+        message: "User is already verified.",
+      };
+    }
+
+    // Check for existing code and rate limit
+    const existingCode =
+      await VerificationCodeRepository.findByUserIdAndPurpose(
+        user.id,
+        "email_verification",
+      );
+
+    if (existingCode) {
+      const lastSent = new Date(existingCode.last_sent_at).getTime();
+      const now = Date.now();
+      const waitTime = authConfig.verificationCode.resendWaitTime * 1000;
+
+      if (now - lastSent < waitTime) {
+        const remainingSeconds = Math.ceil(
+          (waitTime - (now - lastSent)) / 1000,
+        );
+        return {
+          success: false,
+          message: `Please wait ${remainingSeconds} seconds before requesting a new code.`,
+        };
+      }
+
+      // Delete old code
+      await VerificationCodeRepository.deleteByUserIdAndPurpose(
+        user.id,
+        "email_verification",
+      );
+    }
+
+    // Generate new verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = HashUtil.hashVerificationCode(code);
+
+    // Store verification code
+    await VerificationCodeRepository.create({
+      user_id: user.id,
+      code_hash: codeHash,
+      purpose: "email_verification",
+      expires_at: new Date(
+        Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
+      ).toISOString(),
+      last_sent_at: new Date().toISOString(),
+    });
+
+    // Send verification email
+    await EmailService.sendVerificationEmail(user.email, code);
+
+    return {
+      success: true,
+      message: "Verification code sent.",
+    };
+  }
+
+>>>>>>> feature/backend-auth
   static async login(request: LoginRequest): Promise<AuthResponse> {
     // Find user
     const user = await UserRepository.findByEmail(request.email);

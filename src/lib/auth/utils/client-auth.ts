@@ -33,11 +33,11 @@ class AuthClient {
     return response.json();
   }
 
-  async refreshToken(refreshToken: string) {
+
+  async refreshToken() {
     const response = await fetch(`${this.baseUrl}/tokens/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
     });
     return response.json();
   }
@@ -68,52 +68,38 @@ class AuthClient {
     });
     return response.json();
   }
-
-  async logout(refreshToken: string) {
+  async logout() {
     const response = await fetch(`${this.baseUrl}/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
     });
     return response.json();
   }
 
-  async getProfile(accessToken: string) {
+  async getProfile() {
     const response = await fetch(`${this.baseUrl}/profile`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
     });
     return response.json();
   }
 
-  async getSessions(accessToken: string) {
+  async getSessions() {
     const response = await fetch(`${this.baseUrl}/sessions/list`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
     });
     return response.json();
   }
 
-  async logoutAllSessions(accessToken: string) {
+  async logoutAllSessions() {
     const response = await fetch(`${this.baseUrl}/sessions/logout`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
     });
     return response.json();
   }
 
-  async revokeSession(accessToken: string, sessionId: string) {
+  async revokeSession(sessionId: string) {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
     });
     return response.json();
   }

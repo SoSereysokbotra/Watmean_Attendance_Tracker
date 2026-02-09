@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowLeft,
@@ -16,8 +17,11 @@ import { OTPInput } from "../../../components/auth/OTPInput";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
 
 export default function SignupVerifyPage() {
+  const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
 
   useEffect(() => {
@@ -28,11 +32,75 @@ export default function SignupVerifyPage() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleResend = () => {
-    if (timer === 0) {
-      setTimer(30);
-      setGlobalError(""); // Clear error on resend
-      // Add your resend logic here
+  // Auto-verify when all 6 digits are entered
+  useEffect(() => {
+    const isComplete = otp.every((digit) => digit !== "");
+    if (isComplete && !isVerifying) {
+      handleVerify();
+    }
+  }, [otp]);
+
+  const handleVerify = async () => {
+    setGlobalError("");
+    setIsVerifying(true);
+
+    try {
+      const code = otp.join("");
+      const response = await fetch("/api/auth/verify/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to login page on successful verification
+        router.push("/login");
+      } else {
+        setGlobalError(
+          data.message || "Verification failed. Please try again.",
+        );
+        // Clear OTP on error
+        setOtp(["", "", "", "", "", ""]);
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      setGlobalError("An error occurred. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (timer === 0 && !isResending) {
+      setIsResending(true);
+      setGlobalError("");
+
+      try {
+        const response = await fetch("/api/auth/verify/resend", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setTimer(30);
+        } else {
+          setGlobalError(data.message || "Failed to resend code.");
+        }
+      } catch (error) {
+        console.error("Resend error:", error);
+        // Reset timer even on error for better UX
+        setTimer(30);
+      } finally {
+        setIsResending(false);
+      }
     }
   };
 
@@ -57,7 +125,7 @@ export default function SignupVerifyPage() {
       >
         {/* Back Link */}
         <Link
-          href="/signup"
+          href="/register"
           className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-brand-primary transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -84,17 +152,16 @@ export default function SignupVerifyPage() {
 
         {/* Form */}
         <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-          <OTPInput value={otp} onChange={setOtp} />
-          <Link href="/login">
-            <button
-              type="submit"
-              disabled={otp.some((digit) => digit === "")}
-              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              Verify
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </button>
-          </Link>
+          <OTPInput value={otp} onChange={setOtp} disabled={isVerifying} />
+          <button
+            type="button"
+            onClick={handleVerify}
+            disabled={otp.some((digit) => digit === "") || isVerifying}
+            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {isVerifying ? "Verifying..." : "Verify"}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
         </form>
 
         {/* Resend Logic */}
@@ -110,9 +177,10 @@ export default function SignupVerifyPage() {
           ) : (
             <button
               onClick={handleResend}
-              className="text-sm font-semibold text-brand-primary hover:underline transition-all"
+              disabled={isResending}
+              className="text-sm font-semibold text-brand-primary hover:underline transition-all disabled:opacity-50"
             >
-              Click to resend code
+              {isResending ? "Sending..." : "Click to resend code"}
             </button>
           )}
         </div>
