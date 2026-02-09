@@ -5,9 +5,10 @@ import React, { useRef } from "react";
 interface OTPInputProps {
   value: string[];
   onChange: (value: string[]) => void;
+  disabled?: boolean;
 }
 
-export function OTPInput({ value, onChange }: OTPInputProps) {
+export function OTPInput({ value, onChange, disabled = false }: OTPInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (index: number, val: string) => {
@@ -52,10 +53,11 @@ export function OTPInput({ value, onChange }: OTPInputProps) {
           type="text"
           maxLength={1}
           value={digit}
+          disabled={disabled}
           onChange={(e) => handleChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
-          className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold rounded-xl border bg-card text-foreground outline-none transition-all
+          className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold rounded-xl border bg-card text-foreground outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed
             ${
               digit
                 ? "border-brand-primary ring-2 ring-brand-primary/20"
