@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Download,
   Calendar as CalendarIcon,
@@ -8,6 +8,7 @@ import {
   Users,
   AlertCircle,
   Clock,
+  Loader2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -21,63 +22,16 @@ import {
   Bar,
   Cell,
 } from "recharts";
-import { Calendar } from "../../../../components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "../../../../components/ui/popover";
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 
-// --- Mock Data ---
-const reports = [
-  {
-    id: 1,
-    className: "Physics 101: Mechanics",
-    code: "PHY-101",
-    room: "Lecture Hall A",
-    date: "2026-01-25",
-    present: 24,
-    absent: 4,
-    rate: 86,
-    status: "Good",
-  },
-  {
-    id: 2,
-    className: "Chemistry 201: Organic",
-    code: "CHE-201",
-    room: "Lab B",
-    date: "2026-01-24",
-    present: 22,
-    absent: 6,
-    rate: 79,
-    status: "Warning",
-  },
-  {
-    id: 3,
-    className: "Math 301: Calculus",
-    code: "MAT-301",
-    room: "Room 304",
-    date: "2026-01-23",
-    present: 25,
-    absent: 3,
-    rate: 89,
-    status: "Good",
-  },
-  {
-    id: 4,
-    className: "Art History: Modern",
-    code: "ART-105",
-    room: "Studio 4",
-    date: "2026-01-22",
-    present: 18,
-    absent: 10,
-    rate: 64,
-    status: "Critical",
-  },
-];
 
-const trendData = [
+const trendDataMock = [
   { date: "Mon", rate: 71 },
   { date: "Tue", rate: 96 },
   { date: "Wed", rate: 89 },
@@ -90,10 +44,44 @@ export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Calculate simple stats
-  const avgRate = Math.round(
-    reports.reduce((acc, curr) => acc + curr.rate, 0) / (reports.length || 1),
-  );
+  const [reports, setReports] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchReports = async () => {
+    try {
+      const response = await fetch("/api/teacher/reports");
+      if (!response.ok) {
+        throw new Error("Failed to fetch reports");
+      }
+      const data = await response.json();
+      console.log("Reports Data:", data);
+
+      // The API currently returns a stats object in 'reports' key
+      setStats(data.reports);
+      setReports([]);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate simple stats (from API or fallback)
+  const avgRate = stats?.averageAttendance || 0;
+  const totalStudents = stats?.totalStudents || 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-screen relative overflow-hidden">
@@ -154,7 +142,7 @@ export default function ReportsPage() {
           },
           {
             label: "Active Students",
-            val: "142",
+            val: `${totalStudents}`,
             sub: "Total enrolled",
             trend: "Stable",
             accent: "bg-blue-500",
@@ -163,7 +151,7 @@ export default function ReportsPage() {
           },
           {
             label: "Total Sessions",
-            val: reports.length.toString(),
+            val: `${stats?.totalClasses || 0}`,
             sub: "This semester",
             trend: "On Track",
             accent: "bg-amber-500",
@@ -172,7 +160,7 @@ export default function ReportsPage() {
           },
           {
             label: "At Risk",
-            val: "3",
+            val: `${stats?.lowAttendanceStudents || 0}`,
             sub: "Students < 75%",
             trend: "Action Needed",
             accent: "bg-rose-500",
@@ -229,7 +217,7 @@ export default function ReportsPage() {
           </h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
+              <AreaChart data={trendDataMock}>
                 <defs>
                   <linearGradient
                     id="colorGradient"
@@ -296,7 +284,12 @@ export default function ReportsPage() {
           </h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={reports} barGap={4}>
+              {/* Using mock reports for now as we don't have list data in API response yet */}
+              <BarChart
+                layout="vertical"
+                data={reports.length > 0 ? reports : []}
+                barGap={4}
+              >
                 <XAxis type="number" hide />
                 <YAxis
                   dataKey="className"

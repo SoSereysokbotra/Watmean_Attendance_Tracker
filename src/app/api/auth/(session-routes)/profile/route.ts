@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserRepository } from "@/lib/auth/repositories/user.repository";
+import { UserRepository } from "@/lib/db/repositories/example.repository";
 import {
   authenticate,
   getAuthUser,

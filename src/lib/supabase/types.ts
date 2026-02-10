@@ -29,6 +29,8 @@ export interface User {
   role: string;
   is_verified: boolean;
   status: string;
+  student_id?: string | null;
+  teacher_id?: string | null;
 }
 
 export interface VerificationCode {

@@ -65,6 +65,46 @@ export default function LiveMapView() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleCheckIn = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    if (!position) {
+      setError("GPS signal not acquired.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/student/checkin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          latitude: position[0],
+          longitude: position[1],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Check-in failed");
+      }
+
+      setSuccess("Checked in successfully!");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group">
       {/* Map Area */}
@@ -84,6 +124,32 @@ export default function LiveMapView() {
             <p className="text-sm font-medium text-muted-foreground">
               Acquiring GPS Signal...
             </p>
+          </div>
+        )}
+
+        {/* Success Overlay */}
+        {success && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3">
+            <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-4">
+              <MapPin className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">Checked In!</h3>
+            <p className="text-muted-foreground">
+              You have successfully marked your attendance.
+            </p>
+            <button
+              onClick={() => setSuccess(null)}
+              className="mt-4 px-6 py-2 bg-brand-primary text-primary-foreground rounded-lg"
+            >
+              Close
+            </button>
+          </div>
+        )}
+
+        {/* Error Overlay (if checkin fail) */}
+        {error && !success && position && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-rose-50 dark:bg-rose-900/90 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-200 px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+            {error}
           </div>
         )}
 
@@ -132,14 +198,20 @@ export default function LiveMapView() {
           <span>Distance: {distance ? `${distance}m` : "--"}</span>
         </div>
         <button
-          disabled={!isWithinRange}
+          disabled={!isWithinRange || loading || !!success}
+          onClick={handleCheckIn}
           className={`px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all ${
-            isWithinRange
+            isWithinRange && !loading && !success
               ? "bg-brand-primary text-primary-foreground hover:bg-brand-primary/90"
               : "bg-muted text-muted-foreground cursor-not-allowed"
           }`}
         >
-          {isWithinRange ? "Check In Now" : "Move Closer"} <MapPin size={16} />
+          {loading
+            ? "Checking In..."
+            : isWithinRange
+              ? "Check In Now"
+              : "Move Closer"}{" "}
+          <MapPin size={16} />
         </button>
       </div>
     </div>

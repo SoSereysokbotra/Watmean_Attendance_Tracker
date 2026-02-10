@@ -5,3 +5,5 @@
  */
 
 export * from "./users.schema";
+export * from "./academic.schema";
+export * from "./sessions.schema";

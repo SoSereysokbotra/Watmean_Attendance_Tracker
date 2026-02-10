@@ -100,9 +100,35 @@ export default function StudentSidebar({
   isOpen,
   toggleSidebar,
 }: StudentSidebarProps) {
-  const studentName = "So Sereysokbotra";
-  const studentId = "STU-2024-789";
-  const studentInitials = "AJ";
+  const [user, setUser] = React.useState<{
+    id: string; // Add id
+    name: string;
+    studentId?: string; // Change to optional
+    student_id?: string; // Add student_id (optional, defensive)
+    initials: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/student/dashboard");
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data for sidebar", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const studentName = user?.name || "Loading...";
+  // Show Loading... only if user is null. If user exists but no studentId, show Not Assigned
+  const studentId = user
+    ? user.studentId || user.student_id || "Not Assigned"
+    : "Loading...";
+  const studentInitials = user?.initials || "..";
 
   return (
     <aside

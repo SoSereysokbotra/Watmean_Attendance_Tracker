@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Filter,
@@ -10,6 +10,7 @@ import {
   ListFilter,
   TrendingUp,
   Archive,
+  Plus,
 } from "lucide-react";
 import {
   Popover,
@@ -17,62 +18,30 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { JoinClassModal } from "@/components/student/JoinClassModal";
 
-const classes = [
-  {
-    id: 1,
-    name: "Physics 101",
-    prof: "Dr. Davis",
-    room: "304",
-    schedule: "Mon, Wed 14:00",
-    progress: 75,
-    colorTheme: "brand-primary",
-  },
-  {
-    id: 2,
-    name: "Chemistry 201",
-    prof: "Prof. Johnson",
-    room: "Lab B",
-    schedule: "Tue, Thu 10:00",
-    progress: 60,
-    colorTheme: "emerald",
-  },
-];
+export default function StudentClassesPage() {
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
-const getColorStyles = (theme: string) => {
-  const styles: Record<
-    string,
-    { bg: string; text: string; light: string; bar: string }
-  > = {
-    "brand-primary": {
-      bg: "bg-brand-primary",
-      text: "text-brand-primary",
-      light: "bg-brand-primary/10",
-      bar: "bg-brand-primary",
-    },
-    emerald: {
-      bg: "bg-emerald-600",
-      text: "text-emerald-700 dark:text-emerald-400",
-      light: "bg-emerald-50 dark:bg-emerald-900/20",
-      bar: "bg-emerald-500",
-    },
-    purple: {
-      bg: "bg-purple-600",
-      text: "text-purple-700 dark:text-purple-400",
-      light: "bg-purple-50 dark:bg-purple-900/20",
-      bar: "bg-purple-500",
-    },
-    orange: {
-      bg: "bg-orange-600",
-      text: "text-orange-700 dark:text-orange-400",
-      light: "bg-orange-50 dark:bg-orange-900/20",
-      bar: "bg-orange-500",
-    },
-  };
-  return styles[theme] || styles["brand-primary"];
-};
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetch("/api/student/classes");
+        if (response.ok) {
+          const data = await response.json();
+          setClasses(data.classes);
+        }
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClasses();
+  }, []);
 
-export default function ClassesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "active" | "completed">(
     "all",
@@ -104,17 +73,38 @@ export default function ClassesPage() {
       }
     });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
-            My Courses
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Current semester progress and enrollment
-          </p>
+    <>
+      <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+              My Courses
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Current semester progress and enrollment
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setShowJoinModal(true)}
+              className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Join Class
+            </Button>
+          </div>
         </div>
+
+        {/* Search and Filters Row */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative group">
             <Search
@@ -204,7 +194,6 @@ export default function ClassesPage() {
           </div>
         ) : (
           filteredClasses.map((cls) => {
-            const colors = getColorStyles(cls.colorTheme);
             return (
               <div
                 key={cls.id}
@@ -251,6 +240,12 @@ export default function ClassesPage() {
           })
         )}
       </div>
-    </div>
+
+      {/* Join Class Modal */}
+      <JoinClassModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+      />
+    </>
   );
 }
