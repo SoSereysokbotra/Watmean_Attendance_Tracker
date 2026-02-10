@@ -1,41 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
+import rateLimit from "express-rate-limit";
 import { authConfig } from "../config";
 
-// In-memory store for rate limiting (for demonstration; use Redis in production)
-const authAttempts = new Map<string, number[]>();
-
-export function authLimiter(request: NextRequest) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown";
-  const now = Date.now();
-  const windowMs = authConfig.rateLimiting.authWindowMs;
-  const max = authConfig.rateLimiting.authMax;
-
-  const attempts = authAttempts.get(ip) || [];
-  const recentAttempts = attempts.filter((time) => time > now - windowMs);
-
-  if (recentAttempts.length >= max) {
-    return NextResponse.json(
-      { message: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
-  }
-
-  recentAttempts.push(now);
-  authAttempts.set(ip, recentAttempts);
-
-  // Clean up old attempts
-  setTimeout(() => {
-    const updatedAttempts = authAttempts.get(ip) || [];
-    const filteredAttempts = updatedAttempts.filter(
-      (time) => time > now - windowMs,
-    );
-    if (filteredAttempts.length === 0) {
-      authAttempts.delete(ip);
-    } else {
-      authAttempts.set(ip, filteredAttempts);
+const limiter = rateLimit({
+  windowMs: authConfig.rateLimiting.authWindowMs,
+  max: authConfig.rateLimiting.authMax,
+  message: "Too many requests. Please try again later.",
+  standardHeaders: true, 
+  legacyHeaders: false, 
+  keyGenerator: (req: any) => {
+    const forwardedFor =
+      req.headers?.get?.("x-forwarded-for") || req.headers?.["x-forwarded-for"];
+    if (typeof forwardedFor === "string") {
+      return forwardedFor.split(",")[0].trim();
     }
-  }, windowMs);
+    return req.ip || req.socket?.remoteAddress || "unknown";
+  },
+});
 
-  return NextResponse.next();
+export async function authLimiter(
+  request: NextRequest,
+): Promise<NextResponse | null> {
+  return new Promise((resolve) => {
+    const mockReq: any = {
+      headers: {
+        get: (key: string) => request.headers.get(key),
+        "x-forwarded-for": request.headers.get("x-forwarded-for"),
+      },
+      socket: {},
+    };
+
+    const mockRes: any = {
+      status: (code: number) => {
+        mockRes.statusCode = code;
+        return mockRes;
+      },
+      json: (data: any) => {
+        mockRes.jsonData = data;
+        return mockRes;
+      },
+      set: () => mockRes,
+      setHeader: () => mockRes,
+    };
+
+    const next = (err?: any) => {
+      if (err || mockRes.statusCode === 429) {
+        // Rate limit exceeded
+        const message =
+          typeof mockRes.jsonData?.message === "string"
+            ? mockRes.jsonData.message
+            : "Too many requests. Please try again later.";
+
+        resolve(NextResponse.json({ message }, { status: 429 }));
+      } else {
+        // Rate limit not exceeded
+        resolve(null);
+      }
+    };
+
+    // Call the rate limiter
+    limiter(mockReq, mockRes, next);
+  });
 }

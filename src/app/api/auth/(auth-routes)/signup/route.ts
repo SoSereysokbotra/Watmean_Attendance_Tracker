@@ -6,8 +6,8 @@ import z from "zod";
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting
-  const rateLimitResponse = authLimiter(request);
-  if (rateLimitResponse.status === 429) {
+  const rateLimitResponse = await authLimiter(request);
+  if (rateLimitResponse) {
     return rateLimitResponse;
   }
 
