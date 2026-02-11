@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MapPin,
@@ -100,6 +100,7 @@ export default function StudentSidebar({
   isOpen,
   toggleSidebar,
 }: StudentSidebarProps) {
+  const router = useRouter();
   const [user, setUser] = React.useState<{
     id: string; // Add id
     name: string;
@@ -107,6 +108,7 @@ export default function StudentSidebar({
     student_id?: string; // Add student_id (optional, defensive)
     initials: string;
   } | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   React.useEffect(() => {
     const fetchUser = async () => {
@@ -122,6 +124,28 @@ export default function StudentSidebar({
     };
     fetchUser();
   }, []);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent double-click
+
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Redirect to login page
+        router.push("/login");
+      } else {
+        console.error("Logout failed");
+        setIsLoggingOut(false);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
+    }
+  };
 
   const studentName = user?.name || "Loading...";
   // Show Loading... only if user is null. If user exists but no studentId, show Not Assigned
@@ -226,12 +250,18 @@ export default function StudentSidebar({
       {/* Footer with Sign Out */}
       <div className="p-4 border-t border-border/15">
         <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
           className={`flex items-center ${
             isOpen ? "gap-2 justify-start" : "justify-center"
-          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full`}
+          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full ${
+            isLoggingOut ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           <LogOut size={isOpen ? 14 : 18} />
-          {isOpen && <span>Sign Out</span>}
+          {isOpen && (
+            <span>{isLoggingOut ? "Signing Out..." : "Sign Out"}</span>
+          )}
         </button>
       </div>
     </aside>

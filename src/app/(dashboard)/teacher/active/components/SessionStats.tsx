@@ -34,7 +34,15 @@ export function SessionStats({
           </p>
           {session && (
             <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-              {session.startTime} - {session.endTime}
+              {new Date(session.startTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              -{" "}
+              {new Date(session.endTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </p>
           )}
         </div>

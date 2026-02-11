@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!name || !code || !semester) {
+    if (!name || !semester) {
       return NextResponse.json(
-        { error: "Missing required fields: name, code, semester" },
+        { error: "Missing required fields: name, semester" },
         { status: 400 },
       );
     }
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       .insert(classes)
       .values({
         name,
-        code,
+        code: code || classCode, // Use teacher's code or auto-generated classCode
         description: description || null,
         teacherId: userId,
         room: room || null,
@@ -178,7 +178,8 @@ export async function POST(request: NextRequest) {
         const invitationPromises = emailList.map((email) =>
           EmailService.sendClassInvitationEmail(email, {
             className: name,
-            classCode,
+            classCode: code || classCode, // Subject Code (e.g., "CS101")
+            joinCode: classCode, // System Code (e.g., "X7K-9P2")
             teacherName: teacher?.fullName || "Your Teacher",
             schedule: schedule || undefined,
             room: room || undefined,
@@ -202,6 +203,57 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Create Class API Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(authConfig.cookies.accessToken)?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    }
+
+    let payload;
+    try {
+      payload = TokenUtil.verifyAccessToken(token);
+    } catch (error) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const userId = payload.id;
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get("id");
+
+    if (!classId) {
+      return NextResponse.json({ error: "Class ID required" }, { status: 400 });
+    }
+
+    // Verify ownership
+    // We can use getClassDetails or a simpler query. Re-using repository.
+    const classDetails = await AcademicRepository.getClassDetails(classId);
+
+    if (!classDetails) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+
+    if (classDetails.teacherId !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    await AcademicRepository.deleteClass(classId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete Class API Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

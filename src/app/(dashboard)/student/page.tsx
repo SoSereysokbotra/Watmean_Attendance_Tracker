@@ -131,19 +131,31 @@ export default function DashboardPage() {
         <DashboardSection title="Today's Schedule">
           <div className="space-y-4">
             {data.todaySchedule.length > 0 ? (
-              data.todaySchedule.map((cls, index) => (
-                <ScheduleItem
-                  key={index}
-                  time={cls.schedule?.split(" ")[0] || "TBD"}
-                  period="AM" // Placeholder, would parse from schedule
-                  title={cls.className}
-                  location={`${cls.room} • ${cls.status}`}
-                  status={cls.status as any}
-                  statusText={
-                    cls.status.charAt(0).toUpperCase() + cls.status.slice(1)
-                  }
-                />
-              ))
+              data.todaySchedule.map((cls, index) => {
+                // Ensure status is valid, default to 'upcoming' if not
+                const validStatus = [
+                  "present",
+                  "upcoming",
+                  "absent",
+                  "late",
+                ].includes(cls.status)
+                  ? (cls.status as "present" | "upcoming" | "absent" | "late")
+                  : "upcoming";
+
+                return (
+                  <ScheduleItem
+                    key={index}
+                    time={cls.schedule?.split(" ")[0] || "TBD"}
+                    period="AM" // Placeholder, would parse from schedule
+                    title={cls.className}
+                    location={`${cls.room || "TBD"}`}
+                    status={validStatus}
+                    statusText={
+                      cls.status.charAt(0).toUpperCase() + cls.status.slice(1)
+                    }
+                  />
+                );
+              })
             ) : (
               <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
                 No classes scheduled for today.

@@ -30,6 +30,30 @@ export default function TeacherSettingsView() {
     }
   };
 
+  const handleSaveProfile = async (updatedData: any) => {
+    try {
+      const response = await fetch("/api/teacher/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data.profile);
+        // toast.success("Profile updated successfully");
+      } else {
+        console.error("Failed to update profile");
+        // toast.error("Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      // toast.error("Error updating profile");
+    }
+  };
+
   const menuItems = [
     { id: "profile", label: "My Profile", icon: User },
     { id: "preferences", label: "Preferences", icon: Globe },
@@ -50,7 +74,6 @@ export default function TeacherSettingsView() {
         email: profile.email,
         phone: "N/A", // API doesn't have phone yet
         major: "Teacher", // Default or fetch if available
-        teacherId: profile.teacherId,
       }
     : {
         fullName: "",
@@ -70,8 +93,9 @@ export default function TeacherSettingsView() {
       {activeTab === "profile" && (
         <UserProfileSettings
           role="Teacher"
-          userId={profile?.id || ""}
+          userId={profile?.teacherId || profile?.id || ""}
           userData={teacherData}
+          onSave={handleSaveProfile}
         />
       )}
 

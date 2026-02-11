@@ -5,7 +5,8 @@
 
 export interface ClassInvitationData {
   className: string;
-  classCode: string;
+  classCode: string; // Subject Code (e.g. CS101)
+  joinCode: string; // System Code (e.g. X7K-9P2)
   teacherName: string;
   schedule?: string;
   room?: string;
@@ -20,7 +21,15 @@ export interface ClassInvitationData {
 export function getClassInvitationEmailTemplate(
   data: ClassInvitationData,
 ): string {
-  const { className, classCode, teacherName, schedule, room, joinUrl } = data;
+  const {
+    className,
+    classCode,
+    joinCode,
+    teacherName,
+    schedule,
+    room,
+    joinUrl,
+  } = data;
 
   return `
     <!DOCTYPE html>
@@ -183,10 +192,11 @@ export function getClassInvitationEmailTemplate(
           </div>
 
           <div class="alternative">
-            <p style="margin: 0 0 10px 0;"><strong>Or enter this code manually:</strong></p>
+            <p style="margin: 0 0 10px 0;"><strong>Or enter the Join Code manually:</strong></p>
             <div class="code-box" style="margin: 10px auto; max-width: 300px;">
-              <div class="label">Class Code</div>
-              <div class="code">${classCode}</div>
+              <div class="label">Join Code</div>
+              <div class="code" style="color: #2563eb;">${joinCode}</div>
+              <div class="label" style="margin-top: 10px; font-size: 11px;">Subject: ${classCode}</div>
             </div>
           </div>
 

@@ -1,13 +1,32 @@
-/**
- * Settings tab component
- * Displays location configuration and geofence settings
- */
-
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 
-export function SettingsTab() {
+import { useState } from "react";
+
+interface SettingsTabProps {
+  session: {
+    id: string;
+    radius: number;
+    room: string;
+  };
+  onUpdate: (data: Partial<{ radius: number; room: string }>) => void;
+}
+
+export function SettingsTab({ session, onUpdate }: SettingsTabProps) {
+  const [radius, setRadius] = useState(session.radius || 50);
+  const [room, setRoom] = useState(session.room || "Unknown Room");
+  const [isEditingRoom, setIsEditingRoom] = useState(false);
+
+  const handleUpdateRadius = () => {
+    onUpdate({ radius });
+  };
+
+  const handleUpdateRoom = () => {
+    onUpdate({ room });
+    setIsEditingRoom(false);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-300">
       {/* Location Settings */}
@@ -28,12 +47,36 @@ export function SettingsTab() {
               Target Classroom
             </label>
             <div className="flex items-center justify-between mt-2">
-              <span className="font-medium text-foreground">
-                Room A-204 (Block B)
-              </span>
-              <Button variant="outline" size="sm">
-                Change
-              </Button>
+              {isEditingRoom ? (
+                <div className="flex w-full gap-2">
+                  <Input
+                    value={room}
+                    onChange={(e) => setRoom(e.target.value)}
+                    className="h-8"
+                  />
+                  <Button size="sm" onClick={handleUpdateRoom}>
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditingRoom(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">{room}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingRoom(true)}
+                  >
+                    Change
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -42,8 +85,17 @@ export function SettingsTab() {
               Geofence Radius
             </label>
             <div className="flex items-center gap-4 mt-2">
-              <Input type="number" defaultValue={50} className="w-24" />
+              <Input
+                type="number"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                onBlur={handleUpdateRadius}
+                className="w-24"
+              />
               <span className="text-sm text-muted-foreground">meters</span>
+              <Button size="sm" variant="ghost" onClick={handleUpdateRadius}>
+                Update
+              </Button>
             </div>
           </div>
         </div>

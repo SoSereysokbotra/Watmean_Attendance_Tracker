@@ -32,63 +32,82 @@ const TeacherMap = dynamic(() => import("@/components/teacher/TeacherMap"), {
 });
 
 // ---------------------------------------------------------
-// 2. Mock Data (With Real Coordinates)
+// 2. Data Fetching
 // ---------------------------------------------------------
-const activeZones = [
-  {
-    id: 1,
-    name: "Physics 101",
-    room: "Room 204",
-    radius: 60,
-    current: 28,
-    total: 30,
-    status: "active",
-    alerts: 0,
-    lat: 11.5564,
-    lng: 104.9282,
-    color: "bg-emerald-500",
-  },
-  {
-    id: 2,
-    name: "CompSci 300",
-    room: "Lab 3",
-    radius: 35,
-    current: 40,
-    total: 42,
-    status: "active",
-    alerts: 2,
-    lat: 11.555,
-    lng: 104.925,
-    color: "bg-indigo-500",
-  },
-  {
-    id: 3,
-    name: "History 101",
-    room: "Main Hall",
-    radius: 100,
-    current: 0,
-    total: 50,
-    status: "pending",
-    alerts: 0,
-    lat: 11.558,
-    lng: 104.929,
-    color: "bg-gray-400",
-  },
-];
+
+interface Zone {
+  id: string | number;
+  name: string;
+  room: string;
+  radius: number;
+  current: number;
+  total: number;
+  status: string;
+  alerts: number;
+  lat: number;
+  lng: number;
+  color: string;
+}
 
 export default function TeacherLiveMap() {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const selectedZone = activeZones.find((z) => z.id === selectedId);
+  const [selectedId, setSelectedId] = useState<string | number | null>(null);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const selectedZone = zones.find((z) => z.id === selectedId);
+
+  React.useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const res = await fetch("/api/teacher/classes");
+        if (!res.ok) throw new Error("Failed to fetch classes");
+        const data = await res.json();
+
+        // Transform and filter classes with location
+        const mappedZones: Zone[] = data.classes
+          .filter((cls: any) => cls.lat && cls.lng)
+          .map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            room: cls.room || "Unknown Room",
+            radius: Number(cls.radius) || 50,
+            current: cls.activeStudents || 0,
+            total: cls.totalStudents || 0,
+            status: cls.status || "inactive",
+            alerts: 0, // API doesn't provide alerts count yet
+            lat: parseFloat(cls.lat),
+            lng: parseFloat(cls.lng),
+            color: cls.status === "active" ? "bg-emerald-500" : "bg-indigo-500",
+          }));
+
+        setZones(mappedZones);
+      } catch (error) {
+        console.error("Error fetching map data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchClasses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-primary" size={32} />
+        <span className="ml-2 text-sm text-muted-foreground">
+          Loading Class Locations...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex group font-sans relative">
-      {/* ---------------------------------------------------------
-          Left: Map Area
-      --------------------------------------------------------- */}
       <div className="flex-1 relative z-0">
         {/* Reusable Component */}
         <TeacherMap
-          zones={activeZones}
+          zones={zones}
           selectedId={selectedId}
           onSelectZone={setSelectedId}
         />
@@ -105,8 +124,8 @@ export default function TeacherLiveMap() {
                   Campus Monitor
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {activeZones.filter((z) => z.status === "active").length}{" "}
-                  Active Sessions
+                  {zones.filter((z) => z.status === "active").length} Active
+                  Sessions
                 </p>
               </div>
             </div>

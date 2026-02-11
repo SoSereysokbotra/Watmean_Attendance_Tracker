@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { MapPin, Loader2, Info, Target } from "lucide-react";
+import { MapPin, Loader2, Info, Target, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const StudentCheckinMap = dynamic(
@@ -30,27 +30,65 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return Math.round(R * c);
 }
 
+interface ActiveSession {
+  sessionId: string;
+  classId: string;
+  className: string;
+  classCode: string;
+  room: string;
+  startTime: string;
+  endTime: string;
+  geofence: {
+    lat: number;
+    lng: number;
+    radius: number;
+  };
+}
+
 export default function LiveMapView() {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeSession, setActiveSession] = useState<ActiveSession | null>(
+    null,
+  );
+  const [loadingSession, setLoadingSession] = useState(true);
 
   const [triggerCenterUser, setTriggerCenterUser] = useState(0);
   const [triggerCenterTarget, setTriggerCenterTarget] = useState(0);
 
-  const targetLocation: [number, number] = [12.5657, 104.991];
-  const ATTENDANCE_RADIUS = 100;
+  // Fetch active session on mount
+  useEffect(() => {
+    const fetchActiveSession = async () => {
+      try {
+        const response = await fetch("/api/student/active-session");
+        const data = await response.json();
+        setActiveSession(data.activeSession);
+      } catch (err) {
+        console.error("Failed to fetch active session:", err);
+      } finally {
+        setLoadingSession(false);
+      }
+    };
+
+    fetchActiveSession();
+  }, []);
+
+  const targetLocation: [number, number] | null = activeSession
+    ? [activeSession.geofence.lat, activeSession.geofence.lng]
+    : null;
+  const attendanceRadius = activeSession?.geofence.radius || 100;
 
   const distance = useMemo(() => {
-    if (!position) return null;
+    if (!position || !targetLocation) return null;
     return getDistance(
       position[0],
       position[1],
       targetLocation[0],
       targetLocation[1],
     );
-  }, [position]);
+  }, [position, targetLocation]);
 
-  const isWithinRange = distance !== null && distance <= ATTENDANCE_RADIUS;
+  const isWithinRange = distance !== null && distance <= attendanceRadius;
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -105,14 +143,41 @@ export default function LiveMapView() {
     }
   };
 
+  // Show loading state while fetching session
+  if (loadingSession) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
+  // Show "no active session" message
+  if (!activeSession) {
+    return (
+      <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col items-center justify-center p-8 text-center">
+        <div className="bg-muted/30 p-6 rounded-full mb-6">
+          <AlertCircle className="h-16 w-16 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          No Active Session
+        </h2>
+        <p className="text-muted-foreground max-w-md">
+          There are no active attendance sessions at the moment. Your teacher
+          needs to launch a session before you can check in.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group">
       {/* Map Area */}
       <div className="flex-1 relative z-0">
         <StudentCheckinMap
           position={position}
-          targetLocation={targetLocation}
-          attendanceRadius={ATTENDANCE_RADIUS}
+          targetLocation={targetLocation!}
+          attendanceRadius={attendanceRadius}
           triggerCenterUser={triggerCenterUser}
           triggerCenterTarget={triggerCenterTarget}
         />
@@ -159,15 +224,10 @@ export default function LiveMapView() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-md font-bold text-foreground">
-                  Check In: Classroom 304
+                  Check In: {activeSession.className}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {new Date().toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {activeSession.room} • Code: {activeSession.classCode}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -195,7 +255,9 @@ export default function LiveMapView() {
       <div className="bg-card p-4 border-t border-border flex justify-between items-center z-[1000]">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Info size={14} />
-          <span>Distance: {distance ? `${distance}m` : "--"}</span>
+          <span>
+            Distance: {distance ? `${distance}m` : "--"} / {attendanceRadius}m
+          </span>
         </div>
         <button
           disabled={!isWithinRange || loading || !!success}

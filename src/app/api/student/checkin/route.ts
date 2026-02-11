@@ -3,6 +3,9 @@ import { TokenUtil } from "@/lib/auth/utils/token.util";
 import { authConfig } from "@/lib/auth/config";
 import { AcademicRepository } from "@/lib/db/repositories/academic.repository";
 import { cookies } from "next/headers";
+import { db } from "@/lib/db";
+import { sessions, classes, enrollments } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // Distance calculation helper (Haversine formula)
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -18,9 +21,6 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return Math.round(R * c);
 }
-
-const TARGET_LOCATION = { lat: 12.5657, lon: 104.991 }; // Mock classroom location
-const ATTENDANCE_RADIUS = 100; // Meters
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,46 +58,102 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify location
-    const distance = getDistance(
-      latitude,
-      longitude,
-      TARGET_LOCATION.lat,
-      TARGET_LOCATION.lon,
-    );
-
-    if (distance > ATTENDANCE_RADIUS) {
-      return NextResponse.json(
-        { error: `You are too far from the classroom (${distance}m)` },
-        { status: 400 },
+    // Find active session for student's enrolled classes
+    const activeSessions = await db
+      .select({
+        sessionId: sessions.id,
+        sessionStartTime: sessions.startTime,
+        sessionEndTime: sessions.endTime,
+        sessionLat: sessions.lat,
+        sessionLng: sessions.lng,
+        sessionRadius: sessions.radius,
+        sessionRoom: sessions.room,
+        classId: classes.id,
+        className: classes.name,
+        classLat: classes.lat,
+        classLng: classes.lng,
+        classRadius: classes.radius,
+      })
+      .from(sessions)
+      .innerJoin(classes, eq(sessions.classId, classes.id))
+      .innerJoin(enrollments, eq(enrollments.classId, classes.id))
+      .where(
+        and(eq(enrollments.studentId, userId), eq(sessions.status, "active")),
       );
-    }
 
-    // Determine class to check in (Mocking logic: finding the first class scheduled for today)
-    // In a real app, logic would match time and class schedule more precisely.
-    const todaySchedule = await AcademicRepository.getTodaySchedule(userId);
-    const activeClass = todaySchedule[0]; // Simplified: taking first class
-
-    if (!activeClass) {
+    if (activeSessions.length === 0) {
       return NextResponse.json(
-        { error: "No class scheduled for check-in right now" },
+        { error: "No active session available for check-in right now" },
         { status: 404 },
       );
     }
 
-    // Create attendance record
+    // Use the first active session (in a real app, might need logic for multiple simultaneous sessions)
+    const activeSession = activeSessions[0];
+
+    // Determine geofence location: use session location if set, otherwise class location
+    const geofenceLat = activeSession.sessionLat
+      ? Number(activeSession.sessionLat)
+      : activeSession.classLat
+        ? Number(activeSession.classLat)
+        : null;
+    const geofenceLng = activeSession.sessionLng
+      ? Number(activeSession.sessionLng)
+      : activeSession.classLng
+        ? Number(activeSession.classLng)
+        : null;
+    const geofenceRadius = activeSession.sessionRadius || 50;
+
+    if (!geofenceLat || !geofenceLng) {
+      return NextResponse.json(
+        {
+          error:
+            "Session location not configured. Please contact your teacher.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify location
+    const distance = getDistance(latitude, longitude, geofenceLat, geofenceLng);
+
+    if (distance > geofenceRadius) {
+      return NextResponse.json(
+        {
+          error: `You are too far from the classroom (${distance}m away, need to be within ${geofenceRadius}m)`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Determine status based on check-in time vs session start time
+    const now = new Date();
+    const sessionStart = new Date(activeSession.sessionStartTime);
+    const lateThresholdMinutes = 15; // Consider late if checking in more than 15 min after start
+    const minutesAfterStart =
+      (now.getTime() - sessionStart.getTime()) / (1000 * 60);
+
+    const status =
+      minutesAfterStart > lateThresholdMinutes ? "late" : "present";
+
+    // Create attendance record with session ID
     try {
       const record = await AcademicRepository.createAttendanceRecord(
         userId,
-        activeClass.classId,
-        "present", // Or Calculate 'late' based on time
+        activeSession.classId,
+        status,
         "Mobile Check-in",
+        activeSession.sessionId,
       );
 
       return NextResponse.json({
         success: true,
         message: "Checked in successfully!",
-        record,
+        record: {
+          ...record,
+          className: activeSession.className,
+          status,
+        },
       });
     } catch (err: any) {
       if (err.message === "Already checked in for this class today") {

@@ -13,37 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-// import { toast } from "sonner";
-
-// const schedule = [
-//   {
-//     id: "1",
-//     className: "Physics 101: Mechanics",
-//     date: "2026-01-26",
-//     time: "08:00 - 10:00 AM",
-//     startTime: "08:00 AM",
-//     endTime: "10:00 AM",
-//     location: "Classroom A-204",
-//   },
-//   {
-//     id: "2",
-//     className: "Chemistry 201: Organic",
-//     date: "2026-01-27",
-//     time: "10:30 - 12:30 PM",
-//     startTime: "10:30 AM",
-//     endTime: "12:30 PM",
-//     location: "Lab B-101",
-//   },
-//   {
-//     id: "3",
-//     className: "Math 301: Calculus",
-//     date: "2026-01-28",
-//     time: "02:00 - 04:00 PM",
-//     startTime: "02:00 PM",
-//     endTime: "04:00 PM",
-//     location: "Classroom C-305",
-//   },
-// ];
 
 interface ScheduleItem {
   id: string;
@@ -57,11 +26,17 @@ interface ScheduleItem {
 
 export default function SchedulePage() {
   const router = useRouter();
+  // Helper for consistent local date string (YYYY-MM-DD)
+  const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // View State: 'day' | 'month'
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
-  const [activeDate, setActiveDate] = useState(
-    new Date().toISOString().split("T")[0],
-  ); // Default to today
+  const [activeDate, setActiveDate] = useState(getLocalDateString(new Date()));
 
   // Calendar State (defaults to current month)
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -81,8 +56,6 @@ export default function SchedulePage() {
       }
       const data = await response.json();
 
-      console.log("Schedule API Response:", data);
-
       // Map API data to frontend format
       const formattedSchedule = data.schedule.map((item: any) => {
         const start = new Date(item.start);
@@ -91,7 +64,7 @@ export default function SchedulePage() {
         return {
           id: item.id,
           className: item.title,
-          date: start.toISOString().split("T")[0], // YYYY-MM-DD
+          date: getLocalDateString(start), // Use local date string
           time: `${formatTime(start)} - ${formatTime(end)}`,
           startTime: formatTime(start),
           endTime: formatTime(end),

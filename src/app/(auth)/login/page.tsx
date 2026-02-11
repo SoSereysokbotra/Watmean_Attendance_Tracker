@@ -8,11 +8,13 @@ import { AuthLayout } from "../../../components/auth/AuthLayout";
 import { AuthInput } from "../../../components/ui/AuthInput";
 import { FormError } from "../../../components/ui/FormError";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +40,7 @@ export default function LoginPage() {
           email,
           password,
         }),
-        credentials: "include", 
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -47,13 +49,19 @@ export default function LoginPage() {
         if (data.data.accessToken) {
           localStorage.setItem("accessToken", data.data.accessToken);
         }
-        const role = data.data.user?.role;
-        if (role === "teacher") {
-          router.push("/teacher");
-        } else if (role === "student") {
-          router.push("/student");
+
+        // If there's a returnUrl, redirect there; otherwise use role-based redirect
+        if (returnUrl) {
+          router.push(decodeURIComponent(returnUrl));
         } else {
-          router.push("/");
+          const role = data.data.user?.role;
+          if (role === "teacher") {
+            router.push("/teacher");
+          } else if (role === "student") {
+            router.push("/student");
+          } else {
+            router.push("/");
+          }
         }
       } else {
         setGlobalError(data.message || "Login failed. Please try again.");

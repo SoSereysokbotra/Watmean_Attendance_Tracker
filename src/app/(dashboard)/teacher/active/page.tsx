@@ -47,15 +47,12 @@ export default function ClassDetailPage() {
 
       if (data.activeSession) {
         setSessionData(data.activeSession);
-        // Transform enrolled students to Student type
-        // The API /api/teacher/active returns 'activeSession' which is the result of 'getClassDetails'
-        // getClassDetails returns a 'students' array, not 'enrollments'
 
         if (data.activeSession.students) {
           const mappedStudents = data.activeSession.students.map(
             (student: any) => ({
               id: student.studentId || student.id,
-              name: student.fullName,
+              name: student.name || student.fullName || "Unknown Student",
               avatar: null, // API doesn't return avatar yet
               checkInTime: null, // We would need attendance records for this
               distance: null,
@@ -99,17 +96,19 @@ export default function ClassDetailPage() {
       initialStudents={initialStudents}
       classInfo={{
         name: sessionData.name,
-        batch: sessionData.code, // using code as batch
+        batch: sessionData.code,
         room: sessionData.room || "Online",
       }}
       session={{
-        id: sessionData.id,
-        startTime: sessionData.schedule
-          ? sessionData.schedule.split(" ")[0]
-          : "", // simplistic parsing
-        endTime: sessionData.schedule ? sessionData.schedule.split(" ")[2] : "",
+        id: sessionData.sessionId, // Correctly use session ID
+        sessionId: sessionData.sessionId, // Redundant but safe
+        classId: sessionData.id, // Keep class ID separate just in case
+        startTime: sessionData.startTime ? sessionData.startTime : "", // simplistic parsing
+        endTime: sessionData.endTime ? sessionData.endTime : "",
         status: "active",
         attendanceCode: "1234", // Mock code
+        room: sessionData.room, // Pass room
+        radius: sessionData.radius, // Pass radius
       }}
     />
   );
@@ -131,6 +130,32 @@ function ActiveSessionView({
   const stats = useAttendance(students);
   const tabs = ["Live Attendance", "Student List", "History", "Settings"];
 
+  const handleUpdate = async (
+    data: Partial<{ radius: number; room: string }>,
+  ) => {
+    try {
+      const response = await fetch("/api/teacher/sessions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: session.id || session.sessionId,
+          ...data,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update session");
+      }
+
+      // Ideally update local state or re-fetch session data, but for now just log
+      console.log("Session updated successfully");
+      alert("Settings updated successfully!");
+    } catch (error) {
+      console.error("Error updating session:", error);
+      alert("Failed to update settings.");
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       {/* Header & Actions */}
@@ -145,7 +170,7 @@ function ActiveSessionView({
             </span>
             <span className="w-1 h-1 bg-border rounded-full"></span>
             <span className="flex items-center gap-1">
-              <MapPin size={16} /> {classInfo.room}
+              <MapPin size={16} /> {session.room || classInfo.room}
             </span>
           </div>
         </div>
@@ -193,7 +218,16 @@ function ActiveSessionView({
 
       {activeTab === "History" && <HistoryTab />}
 
-      {activeTab === "Settings" && <SettingsTab />}
+      {activeTab === "Settings" && (
+        <SettingsTab
+          session={{
+            id: session.id || session.sessionId,
+            radius: session.radius,
+            room: session.room || classInfo.room,
+          }}
+          onUpdate={handleUpdate}
+        />
+      )}
     </div>
   );
 }

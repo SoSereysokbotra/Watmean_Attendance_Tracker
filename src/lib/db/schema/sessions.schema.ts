@@ -28,6 +28,7 @@ export const sessions = pgTable(
     status: text("status", { enum: ["active", "ended", "cancelled"] })
       .notNull()
       .default("active"),
+    room: text("room"),
     lat: text("lat"),
     lng: text("lng"),
     radius: integer("radius").default(50),

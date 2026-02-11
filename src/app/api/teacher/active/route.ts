@@ -76,6 +76,13 @@ export async function GET(request: NextRequest) {
       activeSession.class.id,
     );
 
+    if (!classDetails) {
+      return NextResponse.json(
+        { error: "Class details not found" },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json({
       activeSession: {
         ...classDetails, // Class details + students
@@ -86,6 +93,7 @@ export async function GET(request: NextRequest) {
         lat: activeSession.session.lat,
         lng: activeSession.session.lng,
         radius: activeSession.session.radius,
+        room: activeSession.session.room || classDetails.room,
       },
     });
   } catch (error) {

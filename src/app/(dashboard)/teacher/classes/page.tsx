@@ -69,11 +69,30 @@ export default function TeacherClassesPage() {
       cls.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const deleteClass = (id: string) => {
-    // Implement delete API call here
-    setClasses(classes.filter((c) => c.id !== id));
-    console.log("Class deleted (mock)");
-    // toast.success("Class deleted (mock)");
+  const deleteClass = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this class? This action cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(`/api/teacher/classes?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setClasses(classes.filter((c) => c.id !== id));
+        // toast.success("Class deleted successfully");
+      } else {
+        console.error("Failed to delete class");
+        // toast.error("Failed to delete class");
+      }
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      // toast.error("Error deleting class");
+    }
   };
 
   const getStatusColor = (status: string = "active") => {

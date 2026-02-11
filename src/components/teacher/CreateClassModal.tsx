@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
-import {
-  X,
-  Upload,
-  UserPlus,
-  Check,
-  Loader2,
-  MapPin,
-  Calendar,
-  Info,
-} from "lucide-react";
+import { useState, forwardRef } from "react";
+import { X, Loader2, Info, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 import { CSVUploadField } from "@/components/teacher/CSVUploadField";
 import dynamic from "next/dynamic";
+import { format } from "date-fns";
+import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-datepicker";
 
 const TeacherLocationPicker = dynamic(
   () => import("@/components/teacher/TeacherLocationPicker"),
@@ -27,6 +21,40 @@ const TeacherLocationPicker = dynamic(
     ),
   },
 );
+
+// ----------------------------------------------------------------------
+// 1. Custom Input Component (Preserves your exact UI style)
+// ----------------------------------------------------------------------
+const CustomTimeInput = forwardRef(
+  ({ value, onClick, placeholder }: any, ref: any) => (
+    <div className="relative w-full cursor-pointer group" onClick={onClick}>
+      <Clock
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10 group-hover:text-foreground transition-colors"
+        size={14}
+      />
+      <input
+        readOnly
+        ref={ref}
+        value={value}
+        placeholder={placeholder || "--:--"}
+        className="w-full h-10 pl-9 pr-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-brand-primary cursor-pointer hover:bg-muted/30 transition-colors caret-transparent"
+      />
+    </div>
+  ),
+);
+CustomTimeInput.displayName = "CustomTimeInput";
+
+// ----------------------------------------------------------------------
+// 2. Helper to parse string "14:30" -> Date Object
+// ----------------------------------------------------------------------
+const parseTime = (timeStr: string) => {
+  if (!timeStr) return null;
+  const d = new Date();
+  const [hours, minutes] = timeStr.split(":");
+  d.setHours(Number(hours));
+  d.setMinutes(Number(minutes));
+  return d;
+};
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -50,6 +78,41 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
   const [studentEmails, setStudentEmails] = useState<string[]>([]);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [manualEmails, setManualEmails] = useState("");
+
+  // Schedule State Helper
+  const [scheduleDays, setScheduleDays] = useState<string[]>([]);
+  const [scheduleTimes, setScheduleTimes] = useState({ start: "", end: "" });
+
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const updateScheduleString = (days: string[], start: string, end: string) => {
+    if (days.length === 0 || !start || !end) {
+      setFormData((prev) => ({ ...prev, schedule: "" }));
+      return;
+    }
+    const scheduleStr = `${days.join(", ")} ${start} - ${end}`;
+    setFormData((prev) => ({ ...prev, schedule: scheduleStr }));
+  };
+
+  const toggleDay = (day: string) => {
+    let newDays = [...scheduleDays];
+    if (newDays.includes(day)) {
+      newDays = newDays.filter((d) => d !== day);
+    } else {
+      newDays.push(day);
+    }
+    // Sort days
+    newDays.sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
+
+    setScheduleDays(newDays);
+    updateScheduleString(newDays, scheduleTimes.start, scheduleTimes.end);
+  };
+
+  const handleTimeChange = (type: "start" | "end", value: string) => {
+    const newTimes = { ...scheduleTimes, [type]: value };
+    setScheduleTimes(newTimes);
+    updateScheduleString(scheduleDays, newTimes.start, newTimes.end);
+  };
 
   if (!isOpen) return null;
 
@@ -175,18 +238,83 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Schedule
+                  Class Schedule
                 </label>
-                <Input
-                  placeholder="e.g. Mon, Wed 10:00 - 11:30"
-                  value={formData.schedule}
-                  onChange={(e) =>
-                    setFormData({ ...formData, schedule: e.target.value })
-                  }
-                />
+                <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+                  {/* Days Selector */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Days
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {daysOfWeek.map((day) => (
+                        <button
+                          key={day}
+                          onClick={() => toggleDay(day)}
+                          className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${
+                            scheduleDays.includes(day)
+                              ? "bg-brand-primary text-primary-foreground shadow-md shadow-brand-primary/20"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Time Selector - UPDATED WITH REACT-DATEPICKER */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Time
+                    </span>
+                    <div className="flex items-center gap-3">
+                      {/* Start Time */}
+                      <div className="relative flex-1">
+                        <DatePicker
+                          selected={parseTime(scheduleTimes.start)}
+                          onChange={(date: Date | null) => {
+                            const newTime = date ? format(date, "HH:mm") : "";
+                            handleTimeChange("start", newTime);
+                          }}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={15}
+                          timeCaption="Start"
+                          dateFormat="HH:mm"
+                          placeholderText="Start"
+                          customInput={<CustomTimeInput />}
+                          wrapperClassName="w-full"
+                        />
+                      </div>
+
+                      <span className="text-muted-foreground">-</span>
+
+                      {/* End Time */}
+                      <div className="relative flex-1">
+                        <DatePicker
+                          selected={parseTime(scheduleTimes.end)}
+                          onChange={(date: Date | null) => {
+                            const newTime = date ? format(date, "HH:mm") : "";
+                            handleTimeChange("end", newTime);
+                          }}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={15}
+                          timeCaption="End"
+                          dateFormat="HH:mm"
+                          placeholderText="End"
+                          customInput={<CustomTimeInput />}
+                          wrapperClassName="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Description

@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users.schema";
+import { sessions } from "./sessions.schema"; // NEW: Import sessions for foreign key reference
 
 /**
  * Classes table - stores class information
@@ -19,7 +20,7 @@ export const classes = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
-    code: text("code").notNull().unique(),
+    code: text("code").notNull(),
     description: text("description"),
     teacherId: uuid("teacher_id")
       .notNull()
@@ -107,6 +108,9 @@ export const attendanceRecords = pgTable(
     classId: uuid("class_id")
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id").references(() => sessions.id, {
+      onDelete: "set null",
+    }), // NEW: Link attendance to specific session
     date: date("date").notNull(),
     status: text("status", {
       enum: ["present", "absent", "late", "excused"],
@@ -119,6 +123,7 @@ export const attendanceRecords = pgTable(
   (table) => ({
     studentIdIdx: index("idx_attendance_student_id").on(table.studentId),
     classIdIdx: index("idx_attendance_class_id").on(table.classId),
+    sessionIdIdx: index("idx_attendance_session_id").on(table.sessionId), // NEW: Index for session lookups
     dateIdx: index("idx_attendance_date").on(table.date),
     statusIdx: index("idx_attendance_status").on(table.status),
   }),
@@ -138,6 +143,10 @@ export const attendanceRecordsRelations = relations(
       fields: [attendanceRecords.classId],
       references: [classes.id],
     }),
+    session: one(sessions, {
+      fields: [attendanceRecords.sessionId],
+      references: [sessions.id],
+    }), // NEW: Link to session
   }),
 );
 

@@ -52,7 +52,56 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  // Implementation for updating settings would go here
-  // For now, just a placeholder
-  return NextResponse.json({ message: "Settings update not implemented yet" });
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(authConfig.cookies.accessToken)?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    }
+
+    let payload;
+    try {
+      payload = TokenUtil.verifyAccessToken(token);
+    } catch (error) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const userId = payload.id;
+    const body = await request.json();
+    const { fullName } = body;
+
+    if (!fullName) {
+      return NextResponse.json(
+        { error: "Full Name is required" },
+        { status: 400 },
+      );
+    }
+
+    const updatedUser = await UserRepository.update(userId, {
+      full_name: fullName,
+    });
+
+    return NextResponse.json({
+      success: true,
+      profile: {
+        id: updatedUser.id,
+        fullName: updatedUser.full_name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isVerified: updatedUser.is_verified,
+        status: updatedUser.status,
+        teacherId: updatedUser.teacher_id,
+      },
+    });
+  } catch (error) {
+    console.error("Update Settings API Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
 }
