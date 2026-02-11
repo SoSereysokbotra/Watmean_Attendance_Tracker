@@ -14,7 +14,7 @@ import "leaflet/dist/leaflet.css";
 
 // Interface for the Zone data
 interface Zone {
-  id: number;
+  id: string | number;
   name: string;
   room: string;
   radius: number;
@@ -26,8 +26,8 @@ interface Zone {
 
 interface TeacherMapProps {
   zones: Zone[];
-  selectedId: number | null;
-  onSelectZone: (id: number) => void;
+  selectedId: string | number | null;
+  onSelectZone: (id: string | number) => void;
 }
 
 // ---------------------------------------------------------

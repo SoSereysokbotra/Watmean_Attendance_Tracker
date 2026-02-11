@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Filter,
@@ -10,6 +10,7 @@ import {
   Search,
   Trash,
   Users,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
@@ -19,33 +20,48 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Link from "next/link";
+import { CreateClassModal } from "@/components/teacher/CreateClassModal";
+// import { toast } from "sonner"; // Sonner not available
 
 interface Class {
   id: string;
   name: string;
   code: string;
-  students: number;
-  attendanceRate: number;
+  activeStudents?: number;
+  totalStudents?: number;
+  progress?: number;
   schedule: string;
-  location: string;
-  status: "active" | "upcoming" | "ended";
+  location?: string; // API might return 'room'
+  room?: string;
+  status?: "active" | "upcoming" | "ended";
+  colorTheme?: string;
 }
 
 export default function TeacherClassesPage() {
-  const [classes, setClasses] = useState<Class[]>([
-    {
-      id: "1",
-      name: "Physics 101: Mechanics",
-      code: "PHY101",
-      students: 28,
-      attendanceRate: 94,
-      schedule: "Mon, Wed, Fri • 08:00-10:00",
-      location: "Room A-204",
-      status: "active",
-    },
-  ]);
-
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const response = await fetch("/api/teacher/classes");
+      if (!response.ok) {
+        throw new Error("Failed to fetch classes");
+      }
+      const data = await response.json();
+      setClasses(data.classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      // toast.error("Failed to load classes");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredClasses = classes.filter(
     (cls) =>
@@ -53,11 +69,33 @@ export default function TeacherClassesPage() {
       cls.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const deleteClass = (id: string) => {
-    setClasses(classes.filter((c) => c.id !== id));
+  const deleteClass = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this class? This action cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(`/api/teacher/classes?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setClasses(classes.filter((c) => c.id !== id));
+        // toast.success("Class deleted successfully");
+      } else {
+        console.error("Failed to delete class");
+        // toast.error("Failed to delete class");
+      }
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      // toast.error("Error deleting class");
+    }
   };
 
-  const getStatusColor = (status: Class["status"]) => {
+  const getStatusColor = (status: string = "active") => {
     switch (status) {
       case "active":
         return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -65,8 +103,18 @@ export default function TeacherClassesPage() {
         return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
       case "ended":
         return "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400";
+      default:
+        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -95,7 +143,10 @@ export default function TeacherClassesPage() {
             <Filter size={16} className="mr-2" />
             Filter
           </Button>
-          <Button className="bg-brand-primary hover:bg-brand-primary/90">
+          <Button
+            className="bg-brand-primary hover:bg-brand-primary/90"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus size={16} className="mr-2" />
             New Class
           </Button>
@@ -112,9 +163,12 @@ export default function TeacherClassesPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <span
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${getStatusColor(cls.status)}`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold ${getStatusColor(
+                    cls.status || "active",
+                  )}`}
                 >
-                  {cls.status.charAt(0).toUpperCase() + cls.status.slice(1)}
+                  {(cls.status || "Active").charAt(0).toUpperCase() +
+                    (cls.status || "active").slice(1)}
                 </span>
                 <h3 className="font-bold text-xl text-foreground mt-2">
                   {cls.name}
@@ -143,15 +197,17 @@ export default function TeacherClassesPage() {
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users size={16} />
-                <span>{cls.students} students</span>
+                <span>
+                  {cls.activeStudents || 0} / {cls.totalStudents || 0} students
+                </span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar size={16} />
-                <span>{cls.schedule}</span>
+                <span>{cls.schedule || "No schedule"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin size={16} />
-                <span>{cls.location}</span>
+                <span>{cls.room || cls.location || "No location"}</span>
               </div>
             </div>
 
@@ -193,7 +249,7 @@ export default function TeacherClassesPage() {
       </div>
 
       {/* Empty State */}
-      {filteredClasses.length === 0 && (
+      {filteredClasses.length === 0 && !loading && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="text-muted-foreground" size={24} />
@@ -204,8 +260,24 @@ export default function TeacherClassesPage() {
           <p className="text-muted-foreground mb-6">
             Try adjusting your search or create a new class
           </p>
+          <Button
+            className="bg-brand-primary hover:bg-brand-primary/90"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus size={16} className="mr-2" />
+            Create Class
+          </Button>
         </div>
       )}
+
+      {/* Create Class Modal */}
+      <CreateClassModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          fetchClasses();
+        }}
+      />
     </div>
   );
 }

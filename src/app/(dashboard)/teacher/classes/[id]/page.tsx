@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import {
   ArrowLeft,
   Users,
@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Trash,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
@@ -26,8 +27,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-// Mock Data Interfaces
+// Data Interfaces
 interface Student {
   id: string;
   name: string;
@@ -58,49 +60,71 @@ export default function ClassDetailsPage({
 }) {
   // Unwrap params using React.use()
   const { id } = use(params);
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<"students" | "assignments">(
     "students",
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [classData, setClassData] = useState<ClassDetails | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
 
-  // Mock Class Data (In a real app, fetch this based on `id`)
-  const classData: ClassDetails = {
-    id: id,
-    name: "Physics 101: Mechanics",
-    description:
-      "Introduction to classical mechanics, Newton's laws, energy, and momentum.",
-    schedule: "Mon, Wed, Fri • 08:00-10:00",
-    location: "Room A-204",
-    nextSession: "Tomorrow, 08:00 AM",
-    totalStudents: 28,
-    avgAttendance: 94,
-    avgGrade: 0,
+  useEffect(() => {
+    fetchClassDetails();
+  }, [id]);
+
+  const fetchClassDetails = async () => {
+    try {
+      const response = await fetch(`/api/teacher/classes/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error("Class not found");
+          router.push("/teacher/classes");
+          return;
+        }
+        throw new Error("Failed to fetch class details");
+      }
+      const data = await response.json();
+      const cls = data.class;
+
+      // Map API data to component state
+      setClassData({
+        id: cls.id,
+        name: cls.name,
+        description: cls.description || "No description provided.",
+        schedule: cls.schedule || "Not scheduled",
+        location: cls.room || "No location",
+        nextSession: cls.nextSession
+          ? new Date(cls.nextSession).toLocaleString("en-US", {
+              weekday: "short",
+              hour: "numeric",
+              minute: "numeric",
+            })
+          : "No upcoming session",
+        totalStudents: cls.totalStudents || 0,
+        avgAttendance: cls.avgAttendance || 0,
+        avgGrade: cls.avgGrade || 0,
+      });
+
+      setStudents(
+        cls.students.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          avatar: s.avatar,
+          attendance: s.attendance,
+          grade: s.grade,
+          gradeScore: s.gradeScore,
+          status: s.status,
+        })) || [],
+      );
+    } catch (error) {
+      console.error("Error loading class details:", error);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  // Mock Student List
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: "1",
-      name: "Alice Johnson",
-      email: "alice.j@uni.edu",
-      avatar: "AJ",
-      attendance: 98,
-      grade: "A",
-      gradeScore: 95,
-      status: "present",
-    },
-    {
-      id: "2",
-      name: "Bob Smith",
-      email: "bob.s@uni.edu",
-      avatar: "BS",
-      attendance: 85,
-      grade: "B",
-      gradeScore: 82,
-      status: "late",
-    },
-  ]);
 
   // Filter students based on search
   const filteredStudents = students.filter(
@@ -110,6 +134,8 @@ export default function ClassDetailsPage({
   );
 
   const removeStudent = (studentId: string) => {
+    // Implement API call to remove student (delete enrollment)
+    // For now, optimistic update
     setStudents(students.filter((s) => s.id !== studentId));
   };
 
@@ -120,6 +146,18 @@ export default function ClassDetailsPage({
       return "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400";
     return "text-rose-600 bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400";
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
+  if (!classData) {
+    return <div className="p-8 text-center">Class not found.</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
@@ -150,6 +188,9 @@ export default function ClassDetailsPage({
                 {classData.location}
               </div>
             </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {classData.description}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -193,7 +234,7 @@ export default function ClassDetailsPage({
             {classData.totalStudents}
           </p>
           <p className="text-xs text-emerald-600 mt-1 flex items-center">
-            <TrendingUpIcon className="w-3 h-3 mr-1" /> +2 this week
+            <TrendingUpIcon className="w-3 h-3 mr-1" /> Active
           </p>
         </div>
 
@@ -227,7 +268,7 @@ export default function ClassDetailsPage({
           <p className="text-2xl font-bold text-foreground">
             {classData.avgGrade}%
           </p>
-          <p className="text-xs text-muted-foreground mt-1">B+ Average</p>
+          <p className="text-xs text-muted-foreground mt-1">N/A</p>
         </div>
       </div>
 
@@ -349,6 +390,11 @@ export default function ClassDetailsPage({
                                 <Clock size={12} /> Late
                               </span>
                             )}
+                            {student.status === "excused" && (
+                              <span className="text-blue-600 text-xs flex items-center justify-center gap-1">
+                                <CheckCircle2 size={12} /> Excused
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-right">
                             <Popover>
@@ -376,7 +422,9 @@ export default function ClassDetailsPage({
                 </div>
                 {filteredStudents.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
-                    No students found matching "{searchQuery}"
+                    {searchQuery
+                      ? `No students found matching "${searchQuery}"`
+                      : "No students enrolled yet."}
                   </div>
                 )}
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Calendar as CalendarIcon,
   CheckCircle2,
@@ -27,34 +27,40 @@ export default function StudentAttendanceView() {
   const [activeTab, setActiveTab] = useState("all");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const attendanceData = [
-    {
-      id: 1,
-      course: "Physics 101",
-      prof: "Prof. Davis",
-      room: "Lecture Hall A",
-      date: "Nov 14, 2023",
-      time: "09:14 AM",
-      status: "Present",
-      signal: "High",
-      gps: "GPS Verified",
-      icon: BookOpen,
-      colorClass: "brand-primary",
-    },
-    {
-      id: 3,
-      course: "Calculus II",
-      prof: "Prof. Evans",
-      room: "Room 304",
-      date: "Nov 12, 2023",
-      time: "No Check-in",
-      status: "Absent",
-      signal: "--",
-      gps: "No Signal",
-      icon: BookOpen,
-      colorClass: "brand-primary",
-    }
-  ];
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const response = await fetch("/api/student/attendance");
+        if (response.ok) {
+          const data = await response.json();
+          const formattedData = data.history.map((record: any) => ({
+            id: record.id,
+            course: `${record.className} (${record.classCode})`,
+            prof: record.teacherName, // Assuming join provides this
+            room: record.room,
+            date: new Date(record.date).toLocaleDateString(),
+            time: record.checkInTime || "--",
+            status:
+              record.status.charAt(0).toUpperCase() + record.status.slice(1),
+            signal: "High", // Mock signal mostly
+            gps: "GPS Verified",
+            icon: BookOpen,
+            colorClass: "brand-primary",
+          }));
+          setAttendanceData(formattedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch attendance:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, []);
 
   const filteredData = attendanceData.filter((item) => {
     if (activeTab === "all") return true;
@@ -78,6 +84,23 @@ export default function StudentAttendanceView() {
     }
   };
 
+  // Calculate actual stats from data
+  const totalClasses = attendanceData.length;
+  const presentCount = attendanceData.filter(
+    (d) => d.status === "Present",
+  ).length;
+  const lateCount = attendanceData.filter((d) => d.status === "Late").length;
+  const absentCount = attendanceData.filter(
+    (d) => d.status === "Absent",
+  ).length;
+  const excusedCount = attendanceData.filter(
+    (d) => d.status === "Excused",
+  ).length;
+  const attendanceRate =
+    totalClasses > 0
+      ? Math.round(((presentCount + lateCount) / totalClasses) * 100)
+      : 100;
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-screen">
       {/* Header Section */}
@@ -87,7 +110,7 @@ export default function StudentAttendanceView() {
             My Attendance
           </h2>
           <p className="text-muted-foreground mt-2 font-medium">
-            Welcome back, Alex. You are currently on track for the semester.
+            Track your semester attendance history and performance.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -127,23 +150,23 @@ export default function StudentAttendanceView() {
         {[
           {
             label: "Attendance Rate",
-            val: "94%",
+            val: `${attendanceRate}%`,
             sub: "Semester Goal: 85%",
-            trend: "Good",
+            trend: attendanceRate >= 85 ? "Good" : "Warning",
             color: "text-emerald-600 dark:text-emerald-400",
             accent: "bg-emerald-500",
           },
           {
             label: "Classes Missed",
-            val: "3",
+            val: absentCount.toString(),
             sub: "Total Sessions",
-            trend: "Warning",
+            trend: absentCount > 3 ? "Warning" : "Good",
             color: "text-rose-600 dark:text-rose-400",
             accent: "bg-rose-500",
           },
           {
             label: "Late Arrivals",
-            val: "2",
+            val: lateCount.toString(),
             sub: "Avg. 5 mins",
             trend: "Stable",
             color: "text-amber-600 dark:text-amber-400",
@@ -151,7 +174,7 @@ export default function StudentAttendanceView() {
           },
           {
             label: "Excused",
-            val: "1",
+            val: excusedCount.toString(),
             sub: "Medical Leave",
             trend: "Approved",
             color: "text-blue-600 dark:text-blue-400",
@@ -377,7 +400,7 @@ export default function StudentAttendanceView() {
                         >
                           {record.signal}
                         </span>
-                      </div>  
+                      </div>
                     </div>
                   </div>
 

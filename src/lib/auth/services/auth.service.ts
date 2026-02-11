@@ -1,5 +1,8 @@
-import { UserRepository } from "../repositories/user.repository";
-import { VerificationCodeRepository } from "../repositories/verificationCode.repository";
+import {
+  UserRepository,
+  VerificationCodeRepository,
+  RefreshTokenRepository,
+} from "@/lib/db/repositories/example.repository";
 import { HashUtil } from "../utils/hash.util";
 import { TokenUtil } from "../utils/token.util";
 import { CookieUtil } from "../utils/cookie.util";
@@ -12,7 +15,6 @@ import {
   AuthResponse,
 } from "../types";
 import { v4 as uuidv4 } from "uuid";
-import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
 
 export class AuthService {
   static async signup(request: SignupRequest): Promise<AuthResponse> {
@@ -20,7 +22,7 @@ export class AuthService {
     const existingUser = await UserRepository.findByEmail(request.email);
 
     if (existingUser) {
-      if (existingUser.is_verified) {
+      if (existingUser.isVerified) {
         return {
           success: false,
           message: "Account already exists. Please login.",
@@ -53,24 +55,39 @@ export class AuthService {
 
     // Create or update user
     let user;
-    if (existingUser && !existingUser.is_verified) {
+    if (existingUser && !existingUser.isVerified) {
       // Update existing user with new password
       user = await UserRepository.update(existingUser.id, {
-        full_name: request.fullName,
+        fullName: request.fullName,
         password: passwordHash,
         role: request.role || "student",
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date(),
       });
     } else {
+      // Generate unique ID based on role
+      const role = request.role || "student";
+      const year = new Date().getFullYear();
+      const random = Math.floor(1000 + Math.random() * 9000); // 4 digit random
+      const uniqueId = `${role === "student" ? "STU" : "TEA"}-${year}-${random}`;
+
       // Create new user
       user = await UserRepository.create({
-        full_name: request.fullName,
+        fullName: request.fullName,
         email: request.email,
         password: passwordHash,
-        role: request.role || "student",
-        is_verified: false,
+        role: role,
+        studentId: role === "student" ? uniqueId : null,
+        teacherId: role === "teacher" ? uniqueId : null,
+        isVerified: false,
         status: "pending",
       });
+    }
+
+    if (!user) {
+      return {
+        success: false,
+        message: "Failed to create or update user.",
+      };
     }
 
     // Generate verification token
@@ -90,13 +107,13 @@ export class AuthService {
 
     // Store verification code
     await VerificationCodeRepository.create({
-      user_id: user.id,
-      code_hash: codeHash,
+      userId: user.id,
+      codeHash: codeHash,
       purpose: "email_verification",
-      expires_at: new Date(
+      expiresAt: new Date(
         Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
-      ).toISOString(),
-      last_sent_at: new Date().toISOString(),
+      ),
+      lastSentAt: new Date(),
     });
 
     // Send verification email
@@ -145,7 +162,7 @@ export class AuthService {
 
     // Get verification code
     const verificationCode =
-      await VerificationCodeRepository.findByUserIdAndPurpose(
+      await VerificationCodeRepository.findActiveByUserIdAndPurpose(
         user.id,
         "email_verification",
       );
@@ -157,7 +174,7 @@ export class AuthService {
     }
 
     // Check expiry
-    if (new Date(verificationCode.expires_at) < new Date()) {
+    if (new Date(verificationCode.expiresAt) < new Date()) {
       await VerificationCodeRepository.deleteByUserIdAndPurpose(
         user.id,
         "email_verification",
@@ -170,7 +187,7 @@ export class AuthService {
 
     // Verify code
     const codeHash = HashUtil.hashVerificationCode(request.code);
-    if (codeHash !== verificationCode.code_hash) {
+    if (codeHash !== verificationCode.codeHash) {
       return {
         success: false,
         message: "Invalid verification code.",
@@ -179,9 +196,9 @@ export class AuthService {
 
     // Update user
     await UserRepository.update(user.id, {
-      is_verified: true,
+      isVerified: true,
       status: "active",
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date(),
     });
 
     // Delete verification code
@@ -229,7 +246,7 @@ export class AuthService {
       };
     }
 
-    if (user.is_verified) {
+    if (user.isVerified) {
       return {
         success: false,
         message: "User is already verified.",
@@ -238,13 +255,15 @@ export class AuthService {
 
     // Check for existing code and rate limit
     const existingCode =
-      await VerificationCodeRepository.findByUserIdAndPurpose(
+      await VerificationCodeRepository.findActiveByUserIdAndPurpose(
         user.id,
         "email_verification",
       );
 
     if (existingCode) {
-      const lastSent = new Date(existingCode.last_sent_at).getTime();
+      const lastSent = existingCode.lastSentAt
+        ? new Date(existingCode.lastSentAt).getTime()
+        : 0;
       const now = Date.now();
       const waitTime = authConfig.verificationCode.resendWaitTime * 1000;
 
@@ -271,13 +290,13 @@ export class AuthService {
 
     // Store verification code
     await VerificationCodeRepository.create({
-      user_id: user.id,
-      code_hash: codeHash,
+      userId: user.id,
+      codeHash: codeHash,
       purpose: "email_verification",
-      expires_at: new Date(
+      expiresAt: new Date(
         Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
-      ).toISOString(),
-      last_sent_at: new Date().toISOString(),
+      ),
+      lastSentAt: new Date(),
     });
 
     // Send verification email
@@ -300,7 +319,7 @@ export class AuthService {
     }
 
     // Check if user is verified
-    if (!user.is_verified) {
+    if (!user.isVerified) {
       return {
         success: false,
         message: "Please verify your email before logging in.",
@@ -345,13 +364,13 @@ export class AuthService {
     // Store refresh token
     const familyId = uuidv4();
     await RefreshTokenRepository.create({
-      user_id: user.id,
-      token_hash: refreshTokenHash,
-      family_id: familyId,
-      device_info: "Web", // TODO: Extract from User-Agent
-      user_agent: "Unknown", // TODO: Extract from request
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      revoked_at: null,
+      userId: user.id,
+      tokenHash: refreshTokenHash,
+      familyId: familyId,
+      deviceInfo: "Web", // TODO: Extract from User-Agent
+      userAgent: "Unknown", // TODO: Extract from request
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      revokedAt: null,
     });
 
     return {
@@ -362,7 +381,7 @@ export class AuthService {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.full_name,
+          fullName: user.fullName,
           role: user.role as any,
         },
       },

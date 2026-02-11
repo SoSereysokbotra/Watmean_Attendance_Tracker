@@ -97,7 +97,7 @@ export class TokenService {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.full_name,
+          fullName: user.full_name || "",
           role: user.role as any,
         },
       },
