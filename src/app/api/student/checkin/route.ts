@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { latitude, longitude } = body;
+    const { latitude, longitude, classId } = body;
 
-    if (!latitude || !longitude) {
+    if (latitude === undefined || longitude === undefined) {
       return NextResponse.json(
         { error: "Location data required" },
         { status: 400 },
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find active session for student's enrolled classes
+    // Filter by classId if provided to ensure correct class check-in
     const activeSessions = await db
       .select({
         sessionId: sessions.id,
@@ -78,18 +79,57 @@ export async function POST(request: NextRequest) {
       .innerJoin(classes, eq(sessions.classId, classes.id))
       .innerJoin(enrollments, eq(enrollments.classId, classes.id))
       .where(
-        and(eq(enrollments.studentId, userId), eq(sessions.status, "active")),
+        and(
+          eq(enrollments.studentId, userId),
+          eq(sessions.status, "active"),
+          classId ? eq(sessions.classId, classId) : undefined,
+        ),
       );
 
     if (activeSessions.length === 0) {
       return NextResponse.json(
-        { error: "No active session available for check-in right now" },
+        {
+          error: classId
+            ? "No active session for this class. The session may have ended or not started yet."
+            : "No active session available for check-in right now",
+        },
         { status: 404 },
       );
     }
 
-    // Use the first active session (in a real app, might need logic for multiple simultaneous sessions)
+    // Use the first active session (should be only one if classId is provided)
     const activeSession = activeSessions[0];
+
+    // Enforce that check-in happens within the session time window
+    const now = new Date();
+    const sessionStart = new Date(activeSession.sessionStartTime);
+    const sessionEnd = new Date(activeSession.sessionEndTime);
+    const GRACE_PERIOD_MINUTES = 30; // Allow check-in up to 30 minutes after session ends
+    const graceEndTime = new Date(
+      sessionEnd.getTime() + GRACE_PERIOD_MINUTES * 60 * 1000,
+    );
+
+    // if (now < sessionStart) {
+    //   return NextResponse.json(
+    //     {
+    //       error:
+    //         "This session has not started yet. Please wait until the scheduled start time to check in.",
+    //     },
+    //     { status: 400 },
+    //   );
+    // }
+
+    if (now > graceEndTime) {
+      const minutesAfterEnd = Math.floor(
+        (now.getTime() - sessionEnd.getTime()) / (1000 * 60),
+      );
+      return NextResponse.json(
+        {
+          error: `This session ended ${minutesAfterEnd} minute(s) ago. Check-in is no longer available (grace period expired).`,
+        },
+        { status: 400 },
+      );
+    }
 
     // Determine geofence location: use session location if set, otherwise class location
     const geofenceLat = activeSession.sessionLat
@@ -102,9 +142,10 @@ export async function POST(request: NextRequest) {
       : activeSession.classLng
         ? Number(activeSession.classLng)
         : null;
-    const geofenceRadius = activeSession.sessionRadius || 50;
+    const geofenceRadius =
+      activeSession.sessionRadius ?? activeSession.classRadius ?? 50;
 
-    if (!geofenceLat || !geofenceLng) {
+    if (geofenceLat === null || geofenceLng === null) {
       return NextResponse.json(
         {
           error:
@@ -114,8 +155,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate numeric coordinates before distance calculation
+    const studentLat = Number(latitude);
+    const studentLng = Number(longitude);
+
+    if (
+      !Number.isFinite(studentLat) ||
+      !Number.isFinite(studentLng) ||
+      !Number.isFinite(geofenceLat) ||
+      !Number.isFinite(geofenceLng)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid location data provided" },
+        { status: 400 },
+      );
+    }
+
+    if (!Number.isFinite(geofenceRadius) || geofenceRadius <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Session geofence is misconfigured. Please ask your teacher to update the location settings.",
+        },
+        { status: 400 },
+      );
+    }
+
     // Verify location
-    const distance = getDistance(latitude, longitude, geofenceLat, geofenceLng);
+    const distance = getDistance(
+      studentLat,
+      studentLng,
+      geofenceLat,
+      geofenceLng,
+    );
 
     if (distance > geofenceRadius) {
       return NextResponse.json(
@@ -127,14 +199,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine status based on check-in time vs session start time
-    const now = new Date();
-    const sessionStart = new Date(activeSession.sessionStartTime);
     const lateThresholdMinutes = 15; // Consider late if checking in more than 15 min after start
     const minutesAfterStart =
       (now.getTime() - sessionStart.getTime()) / (1000 * 60);
 
     const status =
       minutesAfterStart > lateThresholdMinutes ? "late" : "present";
+
+    // Generate warning message if checking in during grace period
+    let warningMessage = null;
+    if (now > sessionEnd && now <= graceEndTime) {
+      const minutesAfterEnd = Math.floor(
+        (now.getTime() - sessionEnd.getTime()) / (1000 * 60),
+      );
+      warningMessage = `Note: The session ended ${minutesAfterEnd} minute(s) ago. You are checking in after the official session end time.`;
+    }
 
     // Create attendance record with session ID
     try {
@@ -149,6 +228,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Checked in successfully!",
+        warning: warningMessage, // Alert student if checking in after session end
         record: {
           ...record,
           className: activeSession.className,

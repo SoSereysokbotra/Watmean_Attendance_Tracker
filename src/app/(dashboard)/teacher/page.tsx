@@ -33,6 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateClassModal } from "@/components/teacher/CreateClassModal";
+import { StudentsList } from "@/components/teacher/StudentsList";
 
 const TeacherLocationPicker = dynamic(
   () => import("@/components/teacher/TeacherLocationPicker"),
@@ -54,6 +56,7 @@ interface Class {
   lat?: string;
   lng?: string;
   radius?: number;
+  schedule?: string;
 }
 
 interface Session {
@@ -64,6 +67,14 @@ interface Session {
   attendance: number;
   total: number;
   room: string;
+  classId: string;
+  // Raw data for editing
+  startTime?: string;
+  endTime?: string;
+  date?: string;
+  lat?: number;
+  lng?: number;
+  radius?: number;
 }
 
 export default function TeacherDashboardPage() {
@@ -78,6 +89,7 @@ export default function TeacherDashboardPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
 
   const [statsData, setStatsData] = useState({
     totalClasses: 0,
@@ -86,12 +98,28 @@ export default function TeacherDashboardPage() {
     atRisk: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
     fetchClasses();
     fetchStats();
+    fetchUserProfile();
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch("/api/auth/profile");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUser(data.data.user);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile", error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -216,10 +244,24 @@ export default function TeacherDashboardPage() {
     }
   };
 
-  const handleEditSession = (session: any) => {
-    // Editing logic remains similar or needs update depending on backend support
-    // For now, implementing simple launch
-    console.log("Edit not fully implemented yet");
+  const deleteSession = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this session?")) return;
+
+    try {
+      const response = await fetch(`/api/teacher/sessions/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setRecentSessions((prev) => prev.filter((s) => s.id !== id));
+        fetchStats(); // Refresh stats
+      } else {
+        alert("Failed to delete session");
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      alert("Error deleting session");
+    }
   };
 
   const handleViewDetails = (id: number) => {
@@ -260,8 +302,20 @@ export default function TeacherDashboardPage() {
 
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
 
-  const deleteSession = (id: number) => {
-    // Delete logic
+  const handleEditSession = (session: any) => {
+    // Parse the display time back to HH:mm if needed, but session object likely has formatted time
+    // We need the raw data really.
+    // Ideally we should fetch session details or store raw data.
+    // For now, let's try to infer or just set basic info and let user edit.
+    // We need to find the class to get the room/radius defaults if not present
+    // But `session` here is from `recentSessions` which is a processed view model.
+    // Let's iterate `classes` to find one matching the title? Unreliable.
+    // Better to have classId in session.
+    // `recentSessions` creation in `fetchStats` maps logic. Let's assume we can get classId there maybe?
+    // Looking at `fetchStats`, `recentSessions` does NOT have classId.
+    // I should update `fetchStats` or just make do.
+    // Actually `AcademicRepository.getRecentSessions` returns `classId` properly!
+    // But `fetchStats` in component MAPPED it out. I need to update `fetchStats` mapping first.
   };
 
   return (
@@ -274,7 +328,8 @@ export default function TeacherDashboardPage() {
               Dashboard
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Welcome back, Prof. Davis. Manage your attendance securely.
+              Welcome back, {user?.fullName || "Professor"}. Manage your
+              attendance securely.
             </p>
           </div>
           <button
@@ -291,6 +346,7 @@ export default function TeacherDashboardPage() {
                 lat: 11.5564,
                 lng: 104.9282,
               });
+              setIsCreatingClass(false);
               setShowCustomization(false);
               setIsModalOpen(true);
             }}
@@ -341,7 +397,6 @@ export default function TeacherDashboardPage() {
             {[
               { id: "overview", label: "Overview" },
               { id: "students", label: "Students" },
-              { id: "analytics", label: "Analytics" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -374,7 +429,11 @@ export default function TeacherDashboardPage() {
                       Recent Activity
                     </h3>
                   </div>
-                  <button className="text-sm font-medium text-brand-primary hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/teacher/schedule")}
+                    className="text-sm font-medium text-brand-primary hover:underline"
+                  >
                     View Calendar
                   </button>
                 </div>
@@ -414,324 +473,430 @@ export default function TeacherDashboardPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "students" && <StudentsList />}
+
       </main>
 
       {/* --- MODAL (Clean & Minimal) --- */}
-      {isModalOpen && mounted && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-background/30 animate-in fade-in duration-200">
-          <div
-            className="absolute inset-0 bg-foreground/20"
-            onClick={() => setIsModalOpen(false)}
-          />
+      <CreateClassModal
+        isOpen={
+          isModalOpen && !editingSessionId && !launching && isCreatingClass
+        }
+        onClose={() => {
+          setIsCreatingClass(false);
+          // If we just closed the create modal, we might want to keep the main modal open?
+          // Or just close everything. Let's close everything for now, or revert to Select mode.
+          // User asked for "Launch Session" to select class. If they cancel creation, maybe go back to select?
+          // For simplicity, let's close the modal completely or go back.
+          // Actually, let's just close the modal.
+          setIsModalOpen(false);
+        }}
+        onClassCreated={() => {
+          fetchClasses();
+          setIsCreatingClass(false);
+          // After creating, maybe auto-select the new class?
+          // For now, let's just go back to "Select Class" mode.
+        }}
+      />
 
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-8 py-6">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">
-                  {editingSessionId ? "Edit Session" : "Launch New Session"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {editingSessionId
-                    ? "Update session parameters."
-                    : "Confirm details to start tracking attendance."}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+      {isModalOpen &&
+        mounted &&
+        !isCreatingClass &&
+        (editingSessionId || launching || !isCreatingClass) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-background/30 animate-in fade-in duration-200">
+            <div
+              className="absolute inset-0 bg-foreground/20"
+              onClick={() => setIsModalOpen(false)}
+            />
 
-            <div className="max-h-[75vh] overflow-y-auto px-8 py-6">
-              <form
-                id="session-form"
-                onSubmit={handleCreateSession}
-                className="space-y-6"
-              >
-                {/* --- Class Selection (Always Visible) --- */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Select Class <span className="text-red-500">*</span>
-                  </label>
-
-                  <Select
-                    required
-                    value={newSession.classId}
-                    /* Shadcn uses onValueChange which passes the string directly, not an event */
-                    onValueChange={(value: string) => {
-                      const selectedClass = classes.find((c) => c.id === value);
-
-                      setNewSession({
-                        ...newSession,
-                        classId: value,
-                        className: selectedClass?.name || "",
-                        room: selectedClass?.room || "",
-                        lat: selectedClass?.lat
-                          ? Number(selectedClass.lat)
-                          : 11.5564,
-                        lng: selectedClass?.lng
-                          ? Number(selectedClass.lng)
-                          : 104.9282,
-                        radius: selectedClass?.radius
-                          ? String(selectedClass.radius)
-                          : "50",
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="w-full rounded-xl border-border bg-card px-4 py-3 h-12 text-foreground shadow-sm transition-all focus:ring-2 focus:ring-brand-primary/20 outline-none">
-                      <SelectValue placeholder="Select a class..." />
-                    </SelectTrigger>
-
-                    <SelectContent className="rounded-xl border-border bg-card shadow-lg">
-                      {classes.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          No classes available
-                        </div>
-                      ) : (
-                        classes.map((cls) => (
-                          <SelectItem
-                            key={cls.id}
-                            value={cls.id}
-                            className="cursor-pointer py-3 focus:bg-brand-primary/10 focus:text-brand-primary"
-                          >
-                            <div className="flex flex-col items-start gap-0.5">
-                              <span className="font-semibold text-sm">
-                                {cls.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground opacity-80">
-                                ID: {cls.code} • {cls.room || "No Room"}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+            <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-border px-8 py-6">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {editingSessionId ? "Edit Session" : "Launch New Session"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {editingSessionId
+                      ? "Update session parameters."
+                      : "Confirm details to start tracking attendance."}
+                  </p>
                 </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
 
-                {/* --- Summary Card (Visible when Class Selected) --- */}
-                {newSession.classId && !showCustomization && (
-                  <div className="rounded-2xl border border-border bg-muted/30 p-5 space-y-4 animate-in slide-in-from-top-2">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
-                        <CheckCircle2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          Ready to Launch
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Using default settings for{" "}
-                          <span className="font-medium text-foreground">
-                            {newSession.className}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
+              <div className="max-h-[75vh] overflow-y-auto px-8 py-6">
+                <form
+                  id="session-form"
+                  onSubmit={handleCreateSession}
+                  className="space-y-6"
+                >
+                  {/* --- Class Selection (Always Visible) --- */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Select Class <span className="text-red-500">*</span>
+                    </label>
 
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>
-                          Room:{" "}
-                          <span className="font-medium text-foreground">
-                            {newSession.room || "Not set"}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          Time:{" "}
-                          <span className="font-medium text-foreground">
-                            {newSession.startTime} - {newSession.endTime}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          Radius:{" "}
-                          <span className="font-medium text-foreground">
-                            {newSession.radius}m
-                          </span>
-                        </span>
-                      </div>
-                    </div>
+                    <Select
+                      required
+                      value={newSession.classId}
+                      /* Shadcn uses onValueChange which passes the string directly, not an event */
+                      onValueChange={(value: string) => {
+                        const selectedClass = classes.find(
+                          (c) => c.id === value,
+                        );
 
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomization(true)}
-                        className="text-xs font-medium text-brand-primary hover:underline hover:text-brand-primary/80"
-                      >
-                        Need to change location or time? Customize
-                      </button>
-                    </div>
-                  </div>
-                )}
+                        // Helper to parse schedule string (e.g., "Mon 10:15 - 11:00")
+                        let parsedStart = "08:00";
+                        let parsedEnd = "10:00";
 
-                {/* --- Advanced Customization (Hidden by default) --- */}
-                {showCustomization && (
-                  <div className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground">
-                        Session Details
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomization(false)}
-                        className="text-xs text-muted-foreground hover:text-brand-primary"
-                      >
-                        Hide details
-                      </button>
-                    </div>
+                        if (selectedClass?.schedule) {
+                          try {
+                            const timeMatch = selectedClass.schedule.match(
+                              /(\d{1,2}(?::\d{2})?)\s*(?:AM|PM|am|pm)?\s*-\s*(\d{1,2}(?::\d{2})?)\s*(?:AM|PM|am|pm)?/i,
+                            );
 
-                    {/* Room */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Room / Location
-                      </label>
-                      <input
-                        required
-                        placeholder="e.g. Room 304"
-                        value={newSession.room}
-                        onChange={(e) =>
-                          setNewSession({
-                            ...newSession,
-                            room: e.target.value,
-                          })
+                            if (timeMatch) {
+                              // Helper to convert to 24h format HH:mm
+                              const to24h = (
+                                timeStr: string,
+                                isPm: boolean,
+                              ) => {
+                                let [hours, minutes] = timeStr
+                                  .split(":")
+                                  .map(Number);
+                                if (!minutes) minutes = 0;
+
+                                if (isPm && hours < 12) hours += 12;
+                                if (!isPm && hours === 12) hours = 0;
+
+                                return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+                              };
+
+                              const fullString =
+                                selectedClass.schedule.toLowerCase();
+                              const isPm = fullString.includes("pm");
+                              // Simple heuristic: if "pm" is present, assume the later time is PM.
+                              // If start time > end time (symbolically), or if clear AM/PM markers exist, handle better.
+                              // For now, let's use a robust approach for "10:15 - 11:00" (usually 24h or clear context)
+                              // Re-using logic from repository for consistency but simplified for UI input (HH:mm)
+
+                              const startRaw = timeMatch[1];
+                              const endRaw = timeMatch[2];
+
+                              // Let's try to normalize.
+                              // If inputs are already 24h-ish (e.g. 14:00), utilize that.
+                              const normalizeTime = (t: string) => {
+                                if (!t.includes(":"))
+                                  return `${t.padStart(2, "0")}:00`;
+                                const [h, m] = t.split(":");
+                                return `${h.padStart(2, "0")}:${m}`;
+                              };
+
+                              parsedStart = normalizeTime(startRaw);
+                              parsedEnd = normalizeTime(endRaw);
+                            }
+                          } catch (e) {
+                            console.error("Error parsing schedule:", e);
+                          }
+                        } else {
+                          // Default to current time rounded to next 15 mins if no schedule
+                          const now = new Date();
+                          const remainder = 15 - (now.getMinutes() % 15);
+                          now.setMinutes(now.getMinutes() + remainder);
+                          parsedStart = now.toTimeString().slice(0, 5);
+
+                          const end = new Date(now);
+                          end.setHours(end.getHours() + 1); // Default 1 hour duration
+                          parsedEnd = end.toTimeString().slice(0, 5);
                         }
-                        className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                      />
-                    </div>
 
-                    {/* Time Details */}
-                    <div className="grid grid-cols-2 gap-6 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Start Time
-                        </label>
-                        <input
-                          type="time"
-                          value={newSession.startTime}
-                          onChange={(e) =>
-                            setNewSession({
-                              ...newSession,
-                              startTime: e.target.value,
-                            })
-                          }
-                          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          End Time
-                        </label>
-                        <input
-                          type="time"
-                          value={newSession.endTime}
-                          onChange={(e) =>
-                            setNewSession({
-                              ...newSession,
-                              endTime: e.target.value,
-                            })
-                          }
-                          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Date
-                        </label>
-                        <input
-                          type="date"
-                          value={newSession.date}
-                          onChange={(e) =>
-                            setNewSession({
-                              ...newSession,
-                              date: e.target.value,
-                            })
-                          }
-                          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          RADIUS
-                        </label>
-                        <input
-                          required
-                          placeholder="e.g. 50"
-                          value={newSession.radius}
-                          onChange={(e) =>
-                            setNewSession({
-                              ...newSession,
-                              radius: e.target.value,
-                            })
-                          }
-                          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                        />
-                      </div>
-                    </div>
+                        setNewSession({
+                          ...newSession,
+                          classId: value,
+                          className: selectedClass?.name || "",
+                          room: selectedClass?.room || "",
+                          startTime: parsedStart,
+                          endTime: parsedEnd,
+                          lat: selectedClass?.lat
+                            ? Number(selectedClass.lat)
+                            : 11.5564,
+                          lng: selectedClass?.lng
+                            ? Number(selectedClass.lng)
+                            : 104.9282,
+                          radius: selectedClass?.radius
+                            ? String(selectedClass.radius)
+                            : "50",
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full rounded-xl border-border bg-card px-4 py-3 h-12 text-foreground shadow-sm transition-all focus:ring-2 focus:ring-brand-primary/20 outline-none">
+                        <SelectValue placeholder="Select a class..." />
+                      </SelectTrigger>
 
-                    {/* Geofence Details */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Geofence Location & Radius
-                          </label>
-                          <p className="text-[10px] text-muted-foreground">
-                            Drag map to pinpoint class location
+                      <SelectContent className="rounded-xl border-border bg-card shadow-lg">
+                        {classes.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No classes available
+                          </div>
+                        ) : (
+                          classes.map((cls) => (
+                            <SelectItem
+                              key={cls.id}
+                              value={cls.id}
+                              className="cursor-pointer py-3 focus:bg-brand-primary/10 focus:text-brand-primary"
+                            >
+                              <div className="flex flex-col items-start gap-0.5">
+                                <span className="font-semibold text-sm">
+                                  {cls.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground opacity-80">
+                                  ID: {cls.code} • {cls.room || "No Room"}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingClass(true)}
+                      className="text-sm text-brand-primary hover:underline"
+                    >
+                      + Create New Class
+                    </button>
+                  </div>
+
+                  {/* --- Summary Card (Visible when Class Selected) --- */}
+                  {newSession.classId && !showCustomization && (
+                    <div className="rounded-2xl border border-border bg-muted/30 p-5 space-y-4 animate-in slide-in-from-top-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">
+                            Ready to Launch
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Using default settings for{" "}
+                            <span className="font-medium text-foreground">
+                              {newSession.className}
+                            </span>
                           </p>
                         </div>
                       </div>
 
-                      <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-border ring-offset-2 focus-within:ring-2 focus-within:ring-brand-primary/20">
-                        <TeacherLocationPicker
-                          lat={newSession.lat}
-                          lng={newSession.lng}
-                          onLocationSelect={(lat, lng) =>
-                            setNewSession((prev) => ({ ...prev, lat, lng }))
-                          }
-                        />
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>
+                            Room:{" "}
+                            <span className="font-medium text-foreground">
+                              {newSession.room || "Not set"}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            Time:{" "}
+                            <span className="font-medium text-foreground">
+                              {newSession.startTime} - {newSession.endTime}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>
+                            Radius:{" "}
+                            <span className="font-medium text-foreground">
+                              {newSession.radius}m
+                            </span>
+                          </span>
+                        </div>
+                      </div>
 
-                        <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
-                          Selected: {newSession.lat.toFixed(5)},{" "}
-                          {newSession.lng.toFixed(5)}
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomization(true)}
+                          className="text-xs font-medium text-brand-primary hover:underline hover:text-brand-primary/80"
+                        >
+                          Need to change location or time? Customize
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* --- Advanced Customization (Hidden by default) --- */}
+                  {showCustomization && (
+                    <div className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-foreground">
+                          Session Details
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomization(false)}
+                          className="text-xs text-muted-foreground hover:text-brand-primary"
+                        >
+                          Hide details
+                        </button>
+                      </div>
+
+                      {/* Room */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Room / Location
+                        </label>
+                        <input
+                          required
+                          placeholder="e.g. Room 304"
+                          value={newSession.room}
+                          onChange={(e) =>
+                            setNewSession({
+                              ...newSession,
+                              room: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                        />
+                      </div>
+
+                      {/* Time Details */}
+                      <div className="grid grid-cols-2 gap-6 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Start Time
+                          </label>
+                          <input
+                            type="time"
+                            value={newSession.startTime}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                startTime: e.target.value,
+                              })
+                            }
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            End Time
+                          </label>
+                          <input
+                            type="time"
+                            value={newSession.endTime}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                endTime: e.target.value,
+                              })
+                            }
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            value={newSession.date}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                date: e.target.value,
+                              })
+                            }
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            RADIUS
+                          </label>
+                          <input
+                            required
+                            placeholder="e.g. 50"
+                            value={newSession.radius}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                radius: e.target.value,
+                              })
+                            }
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Geofence Details */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              Geofence Location & Radius
+                            </label>
+                            <p className="text-[10px] text-muted-foreground">
+                              Drag map to pinpoint class location
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="relative h-56 w-full overflow-hidden rounded-2xl border border-border ring-offset-2 focus-within:ring-2 focus-within:ring-brand-primary/20">
+                          <TeacherLocationPicker
+                            lat={newSession.lat}
+                            lng={newSession.lng}
+                            onLocationSelect={(lat, lng) =>
+                              setNewSession((prev) => ({ ...prev, lat, lng }))
+                            }
+                          />
+
+                          <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
+                            Selected: {newSession.lat.toFixed(5)},{" "}
+                            {newSession.lng.toFixed(5)}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </form>
-            </div>
+                  )}
+                </form>
+              </div>
 
-            <div className="flex gap-4 border-t border-border bg-muted/30 px-8 py-6">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 rounded-xl border border-border bg-background py-3.5 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                form="session-form"
-                disabled={launching}
-                className="flex-1 rounded-xl bg-brand-primary py-3.5 font-bold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {launching && <Loader2 className="w-4 h-4 animate-spin" />}
-                {editingSessionId ? "Update Session" : "Launch Session"}
-              </button>
+              <div className="flex gap-4 border-t border-border bg-muted/30 px-8 py-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 rounded-xl border border-border bg-background py-3.5 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="session-form"
+                  disabled={launching}
+                  className="flex-1 rounded-xl bg-brand-primary py-3.5 font-bold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {launching && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {editingSessionId ? "Update Session" : "Launch Session"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

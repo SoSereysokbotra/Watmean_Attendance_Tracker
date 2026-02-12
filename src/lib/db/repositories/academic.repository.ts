@@ -96,12 +96,38 @@ export class AcademicRepository {
       .innerJoin(users, eq(classes.teacherId, users.id))
       .where(eq(enrollments.studentId, studentId));
 
-    // For the prototype, we add mock progress and colorTheme since they're not in the schema yet
-    return studentClasses.map((cls) => ({
-      ...cls,
-      progress: Math.floor(Math.random() * 101), // Mock progress 0-100
-      colorTheme: "blue", // Default color theme
-    }));
+    // Get today's attendance records for this student
+    const today = new Date().toISOString().split("T")[0];
+    const todayAttendance = await db
+      .select({
+        classId: attendanceRecords.classId,
+        status: attendanceRecords.status,
+      })
+      .from(attendanceRecords)
+      .where(
+        and(
+          eq(attendanceRecords.studentId, studentId),
+          eq(attendanceRecords.date, today),
+        ),
+      );
+
+    // Map to simple check-in status map
+    const attendanceMap = new Map();
+    todayAttendance.forEach((record) => {
+      attendanceMap.set(record.classId, record.status);
+    });
+
+    // For the prototype, we add mock progress and colorTheme, plus actual check-in status
+    return studentClasses.map((cls) => {
+      const status = attendanceMap.get(cls.id);
+      return {
+        ...cls,
+        progress: Math.floor(Math.random() * 101), // Mock progress 0-100
+        colorTheme: "blue", // Default color theme
+        isCheckedIn: !!status, // True if any record exists for today
+        attendanceStatus: status || null,
+      };
+    });
   }
   /**
    * Get all classes for a student
@@ -147,18 +173,21 @@ export class AcademicRepository {
 
     const total = records.length;
     if (total === 0) {
-      return { percentage: 100, late: 0 };
+      return { percentage: 100, late: 0, absent: 0, excused: 0 };
     }
 
     const present = records.filter((r) => r.status === "present").length;
     const late = records.filter((r) => r.status === "late").length;
-    // Assuming late counts as present for percentage, or maybe not. Let's just do pure present/total.
-    // Or (present + late) / total.
+    const absent = records.filter((r) => r.status === "absent").length;
+    const excused = records.filter((r) => r.status === "excused").length;
+    // Attendance rate counts both present and late as attended
     const attended = present + late;
 
     return {
       percentage: Math.round((attended / total) * 100),
       late,
+      absent,
+      excused,
     };
   }
 
@@ -767,6 +796,125 @@ export class AcademicRepository {
   }
 
   /**
+   * Get attendance trend (daily average) for the last N days
+   */
+  static async getAttendanceTrend(teacherId: string, days: number = 7) {
+    // 1. Get class IDs for this teacher
+    const teacherClasses = await db
+      .select({ id: classes.id })
+      .from(classes)
+      .where(eq(classes.teacherId, teacherId));
+
+    if (teacherClasses.length === 0) return [];
+
+    const classIds = teacherClasses.map((c) => c.id);
+
+    // 2. Get attendance records for these classes within range
+    // Calculate start date
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = startDate.toISOString().split("T")[0];
+
+    const records = await db
+      .select({
+        date: attendanceRecords.date,
+        status: attendanceRecords.status,
+      })
+      .from(attendanceRecords)
+      .where(
+        and(
+          sql`${attendanceRecords.classId} IN ${classIds}`,
+          sql`${attendanceRecords.date} >= ${startDateStr}`,
+        ),
+      )
+      .orderBy(attendanceRecords.date);
+
+    // 3. Group by date and fill missing days
+    const groupedByDate: Record<string, { present: number; total: number }> =
+      {};
+
+    // Initialize all days in the range with 0
+    for (let i = 0; i < days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dStr = d.toISOString().split("T")[0];
+      groupedByDate[dStr] = { present: 0, total: 0 };
+    }
+
+    records.forEach((r) => {
+      // Ensure date exists (it should if logic is correct, but safety check)
+      if (!groupedByDate[r.date]) {
+        // If record date is outside our initialized range for some reason, ignore or init
+        // strict range check above should prevent this, but just in case of timezone weirdness
+        return;
+      }
+      groupedByDate[r.date].total++;
+      if (r.status === "present" || r.status === "late") {
+        groupedByDate[r.date].present++;
+      }
+    });
+
+    // 4. Transform to array
+    return Object.entries(groupedByDate)
+      .map(([date, counts]) => ({
+        date: new Date(date).toLocaleDateString("en-US", { weekday: "short" }),
+        fullDate: date,
+        rate:
+          counts.total > 0
+            ? Math.round((counts.present / counts.total) * 100)
+            : 0,
+      }))
+      .sort((a, b) => (a.fullDate > b.fullDate ? 1 : -1));
+  }
+
+  /**
+   * Get performance metrics per class
+   */
+  static async getClassPerformance(teacherId: string) {
+    const teacherClasses = await db
+      .select({
+        id: classes.id,
+        name: classes.name,
+      })
+      .from(classes)
+      .where(eq(classes.teacherId, teacherId));
+
+    const performance = await Promise.all(
+      teacherClasses.map(async (cls) => {
+        // Get records for this class
+        const records = await db
+          .select({
+            status: attendanceRecords.status,
+            date: attendanceRecords.date,
+            sessionId: attendanceRecords.sessionId,
+          })
+          .from(attendanceRecords)
+          .where(eq(attendanceRecords.classId, cls.id));
+
+        const total = records.length;
+        const present = records.filter(
+          (r) => r.status === "present" || r.status === "late",
+        ).length;
+        const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+
+        // Count unique sessions (by sessionId if available, else by date as fallback)
+        const uniqueSessions = new Set(
+          records.map((r) => r.sessionId || r.date),
+        ).size;
+
+        return {
+          id: cls.id,
+          className: cls.name,
+          rate,
+          totalSessions: uniqueSessions,
+        };
+      }),
+    );
+
+    return performance.sort((a, b) => b.rate - a.rate);
+  }
+
+  /**
    * Check if email has pending invitation for a class
    */
   static async hasPendingInvitation(classId: string, email: string) {
@@ -783,5 +931,170 @@ export class AcademicRepository {
       .then((res) => res[0]);
 
     return !!invitation;
+  }
+
+  /**
+   * Get all students for a teacher with aggregated stats
+   */
+  static async getTeacherStudents(teacherId: string) {
+    // 1. Get all students enrolled in any class taught by this teacher
+    const studentsData = await db
+      .selectDistinct({
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        studentId: users.studentId,
+      })
+      .from(enrollments)
+      .innerJoin(classes, eq(enrollments.classId, classes.id))
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .where(eq(classes.teacherId, teacherId));
+
+    // 2. For each student, calculate stats across ALL classes taught by this teacher
+    const studentsWithStats = await Promise.all(
+      studentsData.map(async (student) => {
+        // Get all class IDs for this teacher
+        const teacherClassIds = await db
+          .select({ id: classes.id })
+          .from(classes)
+          .where(eq(classes.teacherId, teacherId))
+          .then((res) => res.map((c) => c.id));
+
+        if (teacherClassIds.length === 0) {
+          return {
+            ...student,
+            classesCount: 0,
+            attendanceRate: 100,
+            status: "Good",
+          };
+        }
+
+        // Count enrollments for this student in these classes
+        const enrolledCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(enrollments)
+          .where(
+            and(
+              eq(enrollments.studentId, student.id),
+              sql`${enrollments.classId} IN ${teacherClassIds}`,
+            ),
+          )
+          .then((res) => Number(res[0].count));
+
+        // Calculate attendance stats for this student in these classes
+        const records = await db
+          .select({ status: attendanceRecords.status })
+          .from(attendanceRecords)
+          .where(
+            and(
+              eq(attendanceRecords.studentId, student.id),
+              sql`${attendanceRecords.classId} IN ${teacherClassIds}`,
+            ),
+          );
+
+        const totalRecords = records.length;
+        const present = records.filter(
+          (r) => r.status === "present" || r.status === "late",
+        ).length;
+        const attendanceRate =
+          totalRecords > 0 ? Math.round((present / totalRecords) * 100) : 100;
+
+        // Determine status
+        let status = "Good";
+        if (attendanceRate < 75) status = "At Risk";
+        else if (attendanceRate < 85) status = "Warning";
+
+        return {
+          id: student.id,
+          name: student.fullName,
+          avatar: student.fullName.charAt(0).toUpperCase(),
+          email: student.email,
+          studentId: student.studentId || "N/A",
+          classesCount: enrolledCount,
+          attendanceRate,
+          status,
+        };
+      }),
+    );
+
+    return studentsWithStats;
+  }
+
+  /**
+   * Get analytics data for a teacher
+   */
+  static async getTeacherAnalytics(teacherId: string) {
+    // 1. Attendance Trends (Last 30 Days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
+    // Get all classes for teacher
+    const teacherClasses = await db
+      .select({ id: classes.id })
+      .from(classes)
+      .where(eq(classes.teacherId, teacherId));
+
+    const classIds = teacherClasses.map((c) => c.id);
+
+    let trendData: any[] = [];
+    let classPerformanceData: any[] = [];
+
+    if (classIds.length > 0) {
+      // Fetch daily attendance sums
+      const dailyStats = await db
+        .select({
+          date: attendanceRecords.date,
+          present: sql<number>`sum(case when ${attendanceRecords.status} in ('present', 'late') then 1 else 0 end)`,
+          absent: sql<number>`sum(case when ${attendanceRecords.status} in ('absent') then 1 else 0 end)`,
+          total: sql<number>`count(*)`,
+        })
+        .from(attendanceRecords)
+        .where(
+          and(
+            sql`${attendanceRecords.classId} IN ${classIds}`,
+            sql`${attendanceRecords.date} >= ${thirtyDaysAgoStr}`,
+          ),
+        )
+        .groupBy(attendanceRecords.date)
+        .orderBy(attendanceRecords.date);
+
+      trendData = dailyStats.map((stat) => ({
+        date: stat.date, // string YYYY-MM-DD
+        attendance:
+          Number(stat.total) > 0
+            ? Math.round((Number(stat.present) / Number(stat.total)) * 100)
+            : 0,
+        presentCount: Number(stat.present),
+        absentCount: Number(stat.absent),
+      }));
+
+      // 2. Class Performance (Average Attendance per Class)
+      const classStats = await db
+        .select({
+          classId: classes.id,
+          className: classes.name,
+          present: sql<number>`sum(case when ${attendanceRecords.status} in ('present', 'late') then 1 else 0 end)`,
+          total: sql<number>`count(*)`,
+        })
+        .from(attendanceRecords)
+        .innerJoin(classes, eq(attendanceRecords.classId, classes.id))
+        .where(eq(classes.teacherId, teacherId))
+        .groupBy(classes.id, classes.name);
+
+      classPerformanceData = classStats.map((stat) => ({
+        name: stat.className,
+        attendance:
+          Number(stat.total) > 0
+            ? Math.round((Number(stat.present) / Number(stat.total)) * 100)
+            : 0,
+        totalClasses: Number(stat.total), // Actually total records
+      }));
+    }
+
+    return {
+      trends: trendData,
+      classPerformance: classPerformanceData,
+    };
   }
 }

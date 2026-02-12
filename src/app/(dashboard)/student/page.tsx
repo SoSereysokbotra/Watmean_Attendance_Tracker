@@ -18,9 +18,12 @@ interface DashboardData {
   stats: {
     attendancePercentage: number;
     lateArrivals: number;
+    classesMissed: number;
+    excused: number;
     todayClasses: number;
   };
   nextClass: {
+    id: string;
     name: string;
     schedule: string;
     room: string;
@@ -106,7 +109,7 @@ export default function DashboardPage() {
             subject={data.nextClass.name}
             room={data.nextClass.room || "TBD"}
             professor={data.nextClass.teacherName || "TBD"}
-            checkInPath="/student/checkin"
+            checkInPath={`/student/checkin?classId=${data.nextClass.id}`}
           />
         ) : (
           <div className="bg-card rounded-xl border border-border/40 p-6 flex flex-col justify-center items-center text-center shadow-sm">

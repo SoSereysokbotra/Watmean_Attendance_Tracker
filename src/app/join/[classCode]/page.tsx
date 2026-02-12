@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Params {
   classCode: string;
@@ -11,14 +13,12 @@ export default function JoinClassPage({ params }: { params: Promise<Params> }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classCode, setClassCode] = useState<string>("");
+  const resolvedParams = use(params);
+  const classCode = resolvedParams.classCode;
 
   useEffect(() => {
-    params.then((resolvedParams) => {
-      setClassCode(resolvedParams.classCode);
-      handleAutoJoin(resolvedParams.classCode);
-    });
-  }, [params]);
+    handleAutoJoin(classCode);
+  }, [classCode]);
 
   const handleAutoJoin = async (code: string) => {
     try {
@@ -55,15 +55,12 @@ export default function JoinClassPage({ params }: { params: Promise<Params> }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="rounded-lg bg-white p-8 shadow-xl">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-            <p className="text-lg font-medium text-gray-700">
-              Joining class...
-            </p>
-            <p className="text-sm text-gray-500">Class code: {classCode}</p>
-          </div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+          <p className="text-muted-foreground animate-pulse">
+            Joining class...
+          </p>
         </div>
       </div>
     );
@@ -71,35 +68,24 @@ export default function JoinClassPage({ params }: { params: Promise<Params> }) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-pink-100">
-        <div className="max-w-md rounded-lg bg-white p-8 shadow-xl">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-red-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Failed to Join Class
-            </h1>
-            <p className="text-center text-gray-600">{error}</p>
-            <button
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md bg-card rounded-2xl border border-border p-8 shadow-sm text-center">
+          <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground mb-2">
+            Unable to Join Class
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            {error || "We couldn't process your request to join this class."}
+          </p>
+          <div className="flex justify-center">
+            <Button
               onClick={() => router.push("/student/classes")}
-              className="mt-4 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
+              className="bg-brand-primary hover:bg-brand-primary/90"
             >
               Go to My Classes
-            </button>
+            </Button>
           </div>
         </div>
       </div>

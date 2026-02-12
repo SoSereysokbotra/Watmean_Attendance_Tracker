@@ -4,7 +4,7 @@ import { authConfig } from "@/lib/auth/config";
 import { AcademicRepository } from "@/lib/db/repositories/academic.repository";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { sessions, classes } from "@/lib/db/schema";
+import { sessions, classes, attendanceRecords } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -33,7 +33,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Find active session for this teacher
+    // Check if a specific classId was provided in the query params
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get("classId");
+
+    // Build the where clause conditionally
+    const whereConditions = classId
+      ? and(
+          eq(sessions.teacherId, userId),
+          eq(sessions.status, "active"),
+          eq(sessions.classId, classId),
+        )
+      : and(eq(sessions.teacherId, userId), eq(sessions.status, "active"));
+
+    // Find active session for this teacher (optionally filtered by classId)
     const activeSession = await db
       .select({
         session: sessions,
@@ -41,7 +54,7 @@ export async function GET(request: NextRequest) {
       })
       .from(sessions)
       .innerJoin(classes, eq(sessions.classId, classes.id))
-      .where(and(eq(sessions.teacherId, userId), eq(sessions.status, "active")))
+      .where(whereConditions)
       .limit(1)
       .then((res) => res[0]);
 
@@ -71,7 +84,7 @@ export async function GET(request: NextRequest) {
       students: [], // For now empty, or fetch if needed
     };
 
-    // Actually, let's get the full class details including students using the Repo
+    // Get full class details including students
     const classDetails = await AcademicRepository.getClassDetails(
       activeSession.class.id,
     );
@@ -83,9 +96,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch attendance records specifically for this ACTIVE SESSION
+    // getClassDetails returns 'latest' status which might be old.
+    // We want status for THIS session.
+    const currentSessionRecords = await db
+      .select()
+      .from(attendanceRecords)
+      .where(eq(attendanceRecords.sessionId, activeSession.session.id));
+
+    // Update students with session-specific status
+    const studentsWithStatus = classDetails.students.map((student) => {
+      const record = currentSessionRecords.find(
+        (r) => r.studentId === student.id,
+      );
+      return {
+        ...student,
+        status: record ? record.status : "absent", // Default to absent if no record for THIS session
+        checkInTime: record ? record.checkInTime : null,
+      };
+    });
+
     return NextResponse.json({
       activeSession: {
-        ...classDetails, // Class details + students
+        ...classDetails,
+        students: studentsWithStatus,
         sessionId: activeSession.session.id,
         status: activeSession.session.status,
         startTime: activeSession.session.startTime,

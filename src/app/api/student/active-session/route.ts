@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const classIdParam = searchParams.get("classId");
+
     // Find active session for student's enrolled classes
+    // If classId is provided, filter by it.
     const activeSessions = await db
       .select({
         sessionId: sessions.id,
@@ -58,14 +62,41 @@ export async function GET(request: NextRequest) {
       .innerJoin(classes, eq(sessions.classId, classes.id))
       .innerJoin(enrollments, eq(enrollments.classId, classes.id))
       .where(
-        and(eq(enrollments.studentId, userId), eq(sessions.status, "active")),
+        and(
+          eq(enrollments.studentId, userId),
+          eq(sessions.status, "active"),
+          classIdParam ? eq(sessions.classId, classIdParam) : undefined,
+        ),
       );
 
-    if (activeSessions.length === 0) {
+    // Filter out expired sessions and update their status
+    const now = new Date();
+    const validSessions = [];
+    const GRACE_PERIOD_MINUTES = 10; // Allow check-in up to 30 minutes after session ends
+
+    for (const session of activeSessions) {
+      const endTime = new Date(session.sessionEndTime);
+      const graceEndTime = new Date(
+        endTime.getTime() + GRACE_PERIOD_MINUTES * 60 * 1000,
+      );
+
+      if (graceEndTime < now) {
+        // Session expired beyond grace period, update status to ended
+        await db
+          .update(sessions)
+          .set({ status: "ended" })
+          .where(eq(sessions.id, session.sessionId));
+      } else {
+        // Session is still valid (either active or in grace period)
+        validSessions.push(session);
+      }
+    }
+
+    if (validSessions.length === 0) {
       return NextResponse.json({ activeSession: null });
     }
 
-    const activeSession = activeSessions[0];
+    const activeSession = validSessions[0];
 
     // Determine geofence location: use session location if set, otherwise class location
     const geofenceLat = activeSession.sessionLat

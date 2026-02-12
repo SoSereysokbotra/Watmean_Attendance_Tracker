@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { TokenUtil } from "@/lib/auth/utils/token.util";
 import { authConfig } from "@/lib/auth/config";
 import { AcademicRepository } from "@/lib/db/repositories/academic.repository";
-import { UserRepository } from "@/lib/db/repositories/example.repository"; 
+import { UserRepository } from "@/lib/db/repositories/example.repository";
 import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
@@ -58,6 +58,8 @@ export async function GET(request: NextRequest) {
       stats: {
         attendancePercentage: stats.percentage,
         lateArrivals: stats.late,
+        classesMissed: stats.absent,
+        excused: stats.excused,
         todayClasses: todaySchedule.length,
       },
       nextClass,

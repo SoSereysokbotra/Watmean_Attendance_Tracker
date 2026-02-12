@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Calendar,
   Filter,
@@ -11,6 +12,9 @@ import {
   Trash,
   Users,
   Loader2,
+  TrendingUp,
+  ListFilter,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
@@ -38,10 +42,16 @@ interface Class {
 }
 
 export default function TeacherClassesPage() {
+  const router = useRouter();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const searchTerm = searchParams.get("search") || "";
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<"name" | "progress">("name");
+  const [filterType, setFilterType] = useState<"all" | "active" | "completed">(
+    "all",
+  );
 
   useEffect(() => {
     fetchClasses();
@@ -63,11 +73,28 @@ export default function TeacherClassesPage() {
     }
   };
 
-  const filteredClasses = classes.filter(
-    (cls) =>
-      cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cls.code.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredClasses = classes
+    .filter((cls) => {
+      const matchesSearch =
+        cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cls.code.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (filterType === "all") return matchesSearch;
+      if (filterType === "active")
+        return matchesSearch && cls.status === "active";
+      if (filterType === "completed")
+        return matchesSearch && cls.status === "ended";
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      }
+      if (sortBy === "progress") {
+        return (b.progress || 0) - (a.progress || 0);
+      }
+      return 0;
+    });
 
   const deleteClass = async (id: string) => {
     if (
@@ -136,13 +163,82 @@ export default function TeacherClassesPage() {
               placeholder="Search classes..."
               className="pl-10 w-64"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                const params = new URLSearchParams(window.location.search);
+                if (e.target.value) {
+                  params.set("search", e.target.value);
+                } else {
+                  params.delete("search");
+                }
+                router.replace(`?${params.toString()}`);
+              }}
             />
           </div>
-          <Button variant="outline">
-            <Filter size={16} className="mr-2" />
-            Filter
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all w-full sm:w-auto">
+                <Filter size={18} /> Filters
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="end">
+              <div className="space-y-1">
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  Sort By
+                </div>
+                <Button
+                  variant={sortBy === "name" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setSortBy("name")}
+                >
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  Name (A-Z)
+                </Button>
+                <Button
+                  variant={sortBy === "progress" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setSortBy("progress")}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Progress (High-Low)
+                </Button>
+
+                <div className="h-px bg-border my-1" />
+
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  Status
+                </div>
+                <Button
+                  variant={filterType === "all" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("all")}
+                >
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  All Courses
+                </Button>
+                <Button
+                  variant={filterType === "active" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("active")}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Active
+                </Button>
+                <Button
+                  variant={filterType === "completed" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start h-8 font-normal"
+                  onClick={() => setFilterType("completed")}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Completed
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             className="bg-brand-primary hover:bg-brand-primary/90"
             onClick={() => setIsCreateModalOpen(true)}
@@ -232,7 +328,7 @@ export default function TeacherClassesPage() {
 
             <div className="flex gap-2">
               <Link
-                href={`/teacher/active`}
+                href={`/teacher/active?classId=${cls.id}`}
                 className="flex-1 py-2.5 text-center bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors text-sm"
               >
                 Take Attendance

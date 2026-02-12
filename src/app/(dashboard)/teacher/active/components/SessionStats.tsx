@@ -18,6 +18,23 @@ export function SessionStats({
   stats,
   targetPercentage = 90,
 }: SessionStatsProps) {
+  const formatTimeRange = () => {
+    if (!session?.startTime || !session?.endTime) return null;
+    const start = new Date(session.startTime);
+    const end = new Date(session.endTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+
+    return `${start.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })} - ${end.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  };
+
+  const timeRange = formatTimeRange();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {/* Status Card */}
@@ -34,15 +51,7 @@ export function SessionStats({
           </p>
           {session && (
             <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-              {new Date(session.startTime).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              -{" "}
-              {new Date(session.endTime).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {timeRange ?? "Time not set"}
             </p>
           )}
         </div>

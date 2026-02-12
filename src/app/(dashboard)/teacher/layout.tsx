@@ -3,7 +3,7 @@
 import { useState } from "react";
 import TeacherSidebar from "@/components/Sidebar/TeacherSidebar";
 import { Search, Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 
 export default function TeacherLayout({
   children,
@@ -12,6 +12,8 @@ export default function TeacherLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
+
+  const router = useRouter();
 
   const getPageTitle = (path: string) => {
     if (path.includes("/dashboard")) return "Dashboard";
@@ -67,6 +69,16 @@ export default function TeacherLayout({
               <input
                 type="text"
                 placeholder="Search..."
+                defaultValue={useSearchParams().get("search") || ""}
+                onChange={(e) => {
+                  const params = new URLSearchParams(window.location.search);
+                  if (e.target.value) {
+                    params.set("search", e.target.value);
+                  } else {
+                    params.delete("search");
+                  }
+                  router.replace(`?${params.toString()}`);
+                }}
                 className="pl-9 pr-4 py-2 bg-muted border-none rounded-full text-sm focus:ring-2 focus:ring-brand-primary/20 focus:bg-card outline-none w-64 transition-colors"
               />
             </div>

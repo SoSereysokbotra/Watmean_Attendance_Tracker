@@ -59,11 +59,17 @@ const parseTime = (timeStr: string) => {
 interface CreateClassModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onClassCreated?: () => void;
 }
 
-export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
+export function CreateClassModal({
+  isOpen,
+  onClose,
+  onClassCreated,
+}: CreateClassModalProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     code: "", // Subject Code
@@ -121,6 +127,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
 
   const handleCreate = async () => {
     setLoading(true);
+    setError(null);
     try {
       // Parse manual emails
       const manualList = manualEmails
@@ -141,14 +148,18 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to create class");
+        throw new Error(data.error || "Failed to create class");
       }
 
+      // Success
+      onClassCreated?.();
       onClose();
-      // Ideally trigger refresh or toast success
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating class:", error);
+      setError(error.message || "Failed to create class. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -184,6 +195,13 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-8 py-6">
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              {error}
+            </div>
+          )}
+
           {step === 1 && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -197,19 +215,27 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
+                    disabled={loading}
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Subject Code <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Subject Code (Optional)
+                    </label>
+                  </div>
                   <Input
                     placeholder="e.g. CS-402"
                     value={formData.code}
                     onChange={(e) =>
                       setFormData({ ...formData, code: e.target.value })
                     }
+                    disabled={loading}
                   />
+                  <p className="text-[10px] text-muted-foreground">
+                    If left blank, a unique system code will be generated.
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -223,6 +249,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, semester: e.target.value })
                     }
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -235,6 +262,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, room: e.target.value })
                     }
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -325,6 +353,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -363,6 +392,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                         radius: Number(e.target.value),
                       })
                     }
+                    disabled={loading}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
@@ -393,6 +423,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
                   placeholder="Enter student emails separated by commas or new lines..."
                   value={manualEmails}
                   onChange={(e) => setManualEmails(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -414,10 +445,7 @@ export function CreateClassModal({ isOpen, onClose }: CreateClassModalProps) {
             <Button
               onClick={handleNext}
               className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
-              disabled={
-                step === 1 &&
-                (!formData.name || !formData.code || !formData.semester)
-              }
+              disabled={step === 1 && (!formData.name || !formData.semester)}
             >
               Next
             </Button>

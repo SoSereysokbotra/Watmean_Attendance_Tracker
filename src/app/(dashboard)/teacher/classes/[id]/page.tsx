@@ -198,10 +198,12 @@ export default function ClassDetailsPage({
               <Mail size={16} className="mr-2" />
               Email Class
             </Button>
-            <Button className="bg-brand-primary hover:bg-brand-primary/90">
-              <CheckCircle2 size={16} className="mr-2" />
-              Take Attendance
-            </Button>
+            <Link href={`/teacher/active?classId=${id}`}>
+              <Button className="bg-brand-primary hover:bg-brand-primary/90">
+                <CheckCircle2 size={16} className="mr-2" />
+                Take Attendance
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

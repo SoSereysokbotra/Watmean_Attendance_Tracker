@@ -5,8 +5,8 @@
  * Displays live attendance tracking and session management
  */
 
-import { useState, useEffect } from "react";
-import { MapPin, Calendar, Download, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { MapPin, Calendar, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudents, useAttendance } from "@/hooks"; // Removed useClassData, we will fetch it
 import { Student } from "@/types";
@@ -17,8 +17,12 @@ import {
   SettingsTab,
   HistoryTab,
 } from "./components";
+import { useSearchParams } from "next/navigation";
 
 export default function ClassDetailPage() {
+  const searchParams = useSearchParams();
+  const classId = searchParams.get("classId");
+
   const [activeTab, setActiveTab] = useState("Live Attendance");
   const [sessionData, setSessionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -32,14 +36,14 @@ export default function ClassDetailPage() {
   // I will assume I need to fetch first, then render the hook-dependent parts.
 
   const [initialStudents, setInitialStudents] = useState<Student[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchActiveSession();
-  }, []);
-
-  const fetchActiveSession = async () => {
+  const fetchActiveSession = useCallback(async () => {
     try {
-      const response = await fetch("/api/teacher/active");
+      const url = classId
+        ? `/api/teacher/active?classId=${classId}`
+        : "/api/teacher/active";
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Failed to load active session");
       }
@@ -53,21 +57,28 @@ export default function ClassDetailPage() {
             (student: any) => ({
               id: student.studentId || student.id,
               name: student.name || student.fullName || "Unknown Student",
-              avatar: null, // API doesn't return avatar yet
-              checkInTime: null, // We would need attendance records for this
+              avatar: student.avatar || null,
+              checkInTime: student.checkInTime || null, // Use checkInTime from API
               distance: null,
-              status: "absent", // Default
+              status: student.status || "absent", // Use status from API, default to absent only if missing
             }),
           );
           setInitialStudents(mappedStudents);
+        } else {
+          setInitialStudents([]);
         }
+        setRefreshKey((k) => k + 1); // Remount view so newly joined students appear
       }
     } catch (error) {
       console.error("Error fetching active session:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [classId]);
+
+  useEffect(() => {
+    fetchActiveSession();
+  }, [fetchActiveSession]);
 
   // Only render hook-dependent logic when we have data or finished loading
   if (loading) {
@@ -93,7 +104,9 @@ export default function ClassDetailPage() {
 
   return (
     <ActiveSessionView
+      key={refreshKey}
       initialStudents={initialStudents}
+      onRefresh={fetchActiveSession}
       classInfo={{
         name: sessionData.name,
         batch: sessionData.code,
@@ -119,16 +132,86 @@ function ActiveSessionView({
   initialStudents,
   classInfo,
   session,
+  onRefresh,
 }: {
   initialStudents: Student[];
   classInfo: any;
   session: any;
+  onRefresh?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState("Live Attendance");
-  const { students, toggleStatus, removeStudent } =
+  const [refreshing, setRefreshing] = useState(false);
+  const { students, setStudents, toggleStatus, removeStudent } =
     useStudents(initialStudents);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const stats = useAttendance(students);
   const tabs = ["Live Attendance", "Student List", "History", "Settings"];
+
+  const handleToggleStatus = async (
+    studentId: string,
+    status: "present" | "absent" | "late" | "excused",
+  ) => {
+    const prev = students.find((s) => s.id === studentId);
+    // Optimistic UI update
+    toggleStatus(studentId, status);
+
+    try {
+      const response = await fetch("/api/teacher/active/students", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: session.id || session.sessionId,
+          classId: session.classId,
+          studentId,
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update attendance");
+      }
+    } catch (error) {
+      console.error("Failed to persist attendance status:", error);
+      // Revert if API fails
+      if (prev?.status) toggleStatus(studentId, prev.status);
+      alert("Failed to update student status. Please try again.");
+    }
+  };
+
+  const handleRemoveStudent = async (studentId: string) => {
+    const prevStudents = students;
+    // Optimistic remove
+    removeStudent(studentId);
+
+    try {
+      const response = await fetch("/api/teacher/active/students", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: session.classId,
+          studentId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove student");
+      }
+    } catch (error) {
+      console.error("Failed to remove student:", error);
+      // Revert if API fails
+      setStudents(prevStudents);
+      alert("Failed to remove student. Please try again.");
+    }
+  };
 
   const handleUpdate = async (
     data: Partial<{ radius: number; room: string }>,
@@ -175,6 +258,18 @@ function ActiveSessionView({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refresh to see newly joined students"
+          >
+            <RefreshCw
+              size={16}
+              className={`mr-2 ${refreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
           <Button variant="outline">
             <Download size={16} className="mr-2" /> Export CSV
           </Button>
@@ -211,8 +306,8 @@ function ActiveSessionView({
       {activeTab === "Student List" && (
         <StudentListTab
           students={students}
-          onToggleStatus={toggleStatus}
-          onRemoveStudent={removeStudent}
+          onToggleStatus={handleToggleStatus}
+          onRemoveStudent={handleRemoveStudent}
         />
       )}
 

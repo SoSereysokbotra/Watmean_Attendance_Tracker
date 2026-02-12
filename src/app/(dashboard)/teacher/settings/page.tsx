@@ -82,6 +82,18 @@ export default function TeacherSettingsView() {
         major: "",
       };
 
+  // Helper function to format teacher ID
+  const formatTeacherId = (id: string, teacherId?: string) => {
+    // If backend already has a formatted teacherId, use it (though currently it might be null or raw UUID)
+    // If we want to enforce the standard format TEA-YYYY-XXXX:
+
+    // Use the first 4 chars of the UUID or ID
+    const uniquePart = (teacherId || id || "").substring(0, 4).toUpperCase();
+    const year = new Date().getFullYear();
+
+    return `TEA-${year}-${uniquePart}`;
+  };
+
   return (
     <SettingsLayout
       title="Settings"
@@ -93,7 +105,7 @@ export default function TeacherSettingsView() {
       {activeTab === "profile" && (
         <UserProfileSettings
           role="Teacher"
-          userId={profile?.teacherId || profile?.id || ""}
+          userId={profile ? formatTeacherId(profile.id, profile.teacherId) : ""}
           userData={teacherData}
           onSave={handleSaveProfile}
         />

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TokenUtil } from "@/lib/auth/utils/token.util";
 import { authConfig } from "@/lib/auth/config";
-import { AcademicRepository } from "@/lib/db/repositories/academic.repository";
+import { db } from "@/lib/db";
+import { sessions } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { cookies } from "next/headers";
 
-export async function GET(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(authConfig.cookies.accessToken)?.value;
@@ -23,27 +28,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const userId = payload.id;
-    const role = payload.role;
-
-    if (role !== "teacher") {
+    if (payload.role !== "teacher") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Fetch comprehensive reports
-    const [stats, trend, performance] = await Promise.all([
-      AcademicRepository.getAttendanceReport(userId),
-      AcademicRepository.getAttendanceTrend(userId, 7), // Last 7 days
-      AcademicRepository.getClassPerformance(userId),
-    ]);
+    const { id } = await params;
 
-    return NextResponse.json({
-      reports: stats, // Keeping 'reports' key for stats as per existing frontend, or rename? Frontend expects 'reports' to be the stats object currently.
-      trend,
-      performance,
-    });
+    // Verify session belongs to teacher
+    const session = await db
+      .select()
+      .from(sessions)
+      .where(and(eq(sessions.id, id), eq(sessions.teacherId, payload.id)))
+      .then((res) => res[0]);
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Session not found or unauthorized" },
+        { status: 404 },
+      );
+    }
+
+    await db.delete(sessions).where(eq(sessions.id, id));
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Teacher Reports API Error:", error);
+    console.error("Delete Session API Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

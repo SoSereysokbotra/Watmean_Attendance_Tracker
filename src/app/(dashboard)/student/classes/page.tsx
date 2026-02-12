@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   Filter,
@@ -21,28 +22,31 @@ import { Button } from "@/components/ui/button";
 import { JoinClassModal } from "@/components/student/JoinClassModal";
 
 export default function StudentClassesPage() {
+  const router = useRouter();
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const response = await fetch("/api/student/classes");
-        if (response.ok) {
-          const data = await response.json();
-          setClasses(data.classes);
-        }
-      } catch (error) {
-        console.error("Failed to fetch classes:", error);
-      } finally {
-        setLoading(false);
+  const fetchClasses = async () => {
+    try {
+      const response = await fetch("/api/student/classes");
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(data.classes ?? []);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch classes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchClasses();
   }, []);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
   const [filterType, setFilterType] = useState<"all" | "active" | "completed">(
     "all",
   );
@@ -93,10 +97,96 @@ export default function StudentClassesPage() {
               Current semester progress and enrollment
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="relative group w-full sm:w-auto">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-primary transition-colors"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => {
+                  const params = new URLSearchParams(window.location.search);
+                  if (e.target.value) {
+                    params.set("search", e.target.value);
+                  } else {
+                    params.delete("search");
+                  }
+                  router.replace(`?${params.toString()}`);
+                }}
+                className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none w-full sm:w-64 transition-all"
+              />
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all w-full sm:w-auto">
+                  <Filter size={18} /> Filters
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="end">
+                <div className="space-y-1">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Sort By
+                  </div>
+                  <Button
+                    variant={sortBy === "name" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-8 font-normal"
+                    onClick={() => setSortBy("name")}
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Name (A-Z)
+                  </Button>
+                  <Button
+                    variant={sortBy === "progress" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-8 font-normal"
+                    onClick={() => setSortBy("progress")}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Progress (High-Low)
+                  </Button>
+
+                  <div className="h-px bg-border my-1" />
+
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Status
+                  </div>
+                  <Button
+                    variant={filterType === "all" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-8 font-normal"
+                    onClick={() => setFilterType("all")}
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    All Courses
+                  </Button>
+                  <Button
+                    variant={filterType === "active" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-8 font-normal"
+                    onClick={() => setFilterType("active")}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Active
+                  </Button>
+                  <Button
+                    variant={filterType === "completed" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-8 font-normal"
+                    onClick={() => setFilterType("completed")}
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Completed
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button
               onClick={() => setShowJoinModal(true)}
-              className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+              className="bg-brand-primary hover:bg-brand-primary/90 text-white w-full sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" />
               Join Class
@@ -105,89 +195,9 @@ export default function StudentClassesPage() {
         </div>
 
         {/* Search and Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative group">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-primary transition-colors"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none w-full sm:w-64 transition-all"
-            />
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all">
-                <Filter size={18} /> Filters
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2" align="end">
-              <div className="space-y-1">
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  Sort By
-                </div>
-                <Button
-                  variant={sortBy === "name" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setSortBy("name")}
-                >
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Name (A-Z)
-                </Button>
-                <Button
-                  variant={sortBy === "progress" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setSortBy("progress")}
-                >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Progress (High-Low)
-                </Button>
-
-                <div className="h-px bg-border my-1" />
-
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  Status
-                </div>
-                <Button
-                  variant={filterType === "all" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setFilterType("all")}
-                >
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  All Courses
-                </Button>
-                <Button
-                  variant={filterType === "active" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setFilterType("active")}
-                >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Active
-                </Button>
-                <Button
-                  variant={filterType === "completed" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setFilterType("completed")}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Completed
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-10">
         {filteredClasses.length === 0 ? (
           <div className="col-span-full py-12 text-center text-muted-foreground">
             No courses found matching your criteria.
@@ -231,9 +241,24 @@ export default function StudentClassesPage() {
                 </div>
 
                 <div className="space-y-3 mt-auto">
-                  <button className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300">
-                    Continue Learning <ArrowRight size={16} />
-                  </button>
+                  <div className="mt-4">
+                    {cls.isCheckedIn ? (
+                      <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                        <MapPin size={16} />
+                        Checked In
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(`/student/checkin?classId=${cls.id}`)
+                        }
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300"
+                      >
+                        Check In <ArrowRight size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -245,6 +270,7 @@ export default function StudentClassesPage() {
       <JoinClassModal
         isOpen={showJoinModal}
         onClose={() => setShowJoinModal(false)}
+        onClassJoined={fetchClasses}
       />
     </>
   );

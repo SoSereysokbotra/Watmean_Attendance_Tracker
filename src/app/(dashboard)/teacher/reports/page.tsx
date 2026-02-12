@@ -30,21 +30,13 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 
-
-const trendDataMock = [
-  { date: "Mon", rate: 71 },
-  { date: "Tue", rate: 96 },
-  { date: "Wed", rate: 89 },
-  { date: "Thu", rate: 79 },
-  { date: "Fri", rate: 86 },
-];
-
 export default function ReportsPage() {
   const [fromDate, setFromDate] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const [reports, setReports] = useState<any[]>([]);
+  const [trend, setTrend] = useState<any[]>([]);
+  const [performance, setPerformance] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,9 +53,9 @@ export default function ReportsPage() {
       const data = await response.json();
       console.log("Reports Data:", data);
 
-      // The API currently returns a stats object in 'reports' key
       setStats(data.reports);
-      setReports([]);
+      setTrend(data.trend || []);
+      setPerformance(data.performance || []);
     } catch (error) {
       console.error("Error fetching reports:", error);
     } finally {
@@ -74,6 +66,28 @@ export default function ReportsPage() {
   // Calculate simple stats (from API or fallback)
   const avgRate = stats?.averageAttendance || 0;
   const totalStudents = stats?.totalStudents || 0;
+
+  const handleDownload = () => {
+    // Generate CSV content
+    const headers = ["Class Name", "Attendance Rate", "Total Sessions"];
+    const rows = performance.map((p) => [
+      p.className,
+      `${p.rate}%`,
+      p.totalSessions,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "attendance_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -121,20 +135,23 @@ export default function ReportsPage() {
             </PopoverContent>
           </Popover>
 
-          {/* DOWNLOAD BUTTON (Unchanged) */}
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95">
+          {/* DOWNLOAD BUTTON */}
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95"
+          >
             <Download size={16} /> Download Log
           </button>
         </div>
       </div>
 
-      {/* Stats Grid (Refactored to match Student 'Summary Section') */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-4">
         {[
           {
             label: "Avg. Attendance",
             val: `${avgRate}%`,
-            sub: "Up 2.4% vs last week",
+            sub: "Average across all classes",
             trend: "Good",
             accent: "bg-emerald-500",
             icon: <TrendingUp size={80} />,
@@ -143,7 +160,7 @@ export default function ReportsPage() {
           {
             label: "Active Students",
             val: `${totalStudents}`,
-            sub: "Total enrolled",
+            sub: "Total unique students",
             trend: "Stable",
             accent: "bg-blue-500",
             icon: <Users size={80} />,
@@ -152,7 +169,7 @@ export default function ReportsPage() {
           {
             label: "Total Sessions",
             val: `${stats?.totalClasses || 0}`,
-            sub: "This semester",
+            sub: "Classes created",
             trend: "On Track",
             accent: "bg-amber-500",
             icon: <Clock size={80} />,
@@ -213,11 +230,11 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-            Weekly Trend
+            Weekly Trend (Last 7 Days)
           </h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendDataMock}>
+              <AreaChart data={trend.length > 0 ? trend : []}>
                 <defs>
                   <linearGradient
                     id="colorGradient"
@@ -280,14 +297,13 @@ export default function ReportsPage() {
 
         <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6">
-            Performance
+            Class Performance
           </h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              {/* Using mock reports for now as we don't have list data in API response yet */}
               <BarChart
                 layout="vertical"
-                data={reports.length > 0 ? reports : []}
+                data={performance.length > 0 ? performance : []}
                 barGap={4}
               >
                 <XAxis type="number" hide />
@@ -295,7 +311,9 @@ export default function ReportsPage() {
                   dataKey="className"
                   type="category"
                   width={100}
-                  tickFormatter={(val: string) => val.split(":")[0]}
+                  tickFormatter={(val: string) =>
+                    val.split(":")[0].substring(0, 15)
+                  }
                   tick={{
                     fill: "hsl(var(--brand-dark))",
                     fontSize: 13,
@@ -314,7 +332,7 @@ export default function ReportsPage() {
                   }}
                 />
                 <Bar dataKey="rate" barSize={32} radius={[6, 6, 6, 6]}>
-                  {reports.map((entry, index) => (
+                  {performance.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={
@@ -322,7 +340,7 @@ export default function ReportsPage() {
                           ? "hsl(var(--brand-primary))"
                           : entry.rate < 70
                             ? "var(--destructive)"
-                            : "hsl(var(--brand-dark))" /* Changed muted to brand-dark */
+                            : "hsl(var(--brand-dark))"
                       }
                       fillOpacity={0.9}
                     />

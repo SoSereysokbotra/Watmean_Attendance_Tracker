@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { MapPin, Loader2, Info, Target, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -46,6 +47,9 @@ interface ActiveSession {
 }
 
 export default function LiveMapView() {
+  const searchParams = useSearchParams();
+  const classId = searchParams.get("classId");
+
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(
@@ -60,7 +64,8 @@ export default function LiveMapView() {
   useEffect(() => {
     const fetchActiveSession = async () => {
       try {
-        const response = await fetch("/api/student/active-session");
+        const query = classId ? `?classId=${classId}` : "";
+        const response = await fetch(`/api/student/active-session${query}`);
         const data = await response.json();
         setActiveSession(data.activeSession);
       } catch (err) {
@@ -71,7 +76,7 @@ export default function LiveMapView() {
     };
 
     fetchActiveSession();
-  }, []);
+  }, [classId]);
 
   const targetLocation: [number, number] | null = activeSession
     ? [activeSession.geofence.lat, activeSession.geofence.lng]
@@ -126,6 +131,7 @@ export default function LiveMapView() {
         body: JSON.stringify({
           latitude: position[0],
           longitude: position[1],
+          classId: classId, // Include classId to check into specific class
         }),
       });
 

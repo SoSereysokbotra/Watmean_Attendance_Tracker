@@ -23,27 +23,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const userId = payload.id;
-    const role = payload.role;
-
-    if (role !== "teacher") {
+    if (payload.role !== "teacher") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Fetch comprehensive reports
-    const [stats, trend, performance] = await Promise.all([
-      AcademicRepository.getAttendanceReport(userId),
-      AcademicRepository.getAttendanceTrend(userId, 7), // Last 7 days
-      AcademicRepository.getClassPerformance(userId),
-    ]);
+    const students = await AcademicRepository.getTeacherStudents(payload.id);
 
     return NextResponse.json({
-      reports: stats, // Keeping 'reports' key for stats as per existing frontend, or rename? Frontend expects 'reports' to be the stats object currently.
-      trend,
-      performance,
+      success: true,
+      students,
     });
   } catch (error) {
-    console.error("Teacher Reports API Error:", error);
+    console.error("Teacher Students API Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

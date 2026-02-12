@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   Trash,
+  FileText,
 } from "lucide-react";
 import {
   Popover,
@@ -32,9 +33,9 @@ export function StudentListTab({
   onRemoveStudent,
 }: StudentListTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"All" | "Present" | "Absent">(
-    "All",
-  );
+  const [filterType, setFilterType] = useState<
+    "All" | "Present" | "Absent" | "Excused"
+  >("All");
 
   const filteredStudents = students.filter((s) => {
     const matchesSearch = s.name
@@ -85,6 +86,13 @@ export function StudentListTab({
               >
                 Absent Only
               </Button>
+              <Button
+                variant={filterType === "Excused" ? "secondary" : "ghost"}
+                className="w-full justify-start h-8 text-sm font-normal"
+                onClick={() => setFilterType("Excused")}
+              >
+                Excused Only
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -117,11 +125,22 @@ export function StudentListTab({
                   {student.name}
                 </td>
                 <td className="px-6 py-4">
-                  {student.status === "present" ? (
+                  {student.status === "present" && (
                     <span className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-md text-xs font-bold">
                       Present
                     </span>
-                  ) : (
+                  )}
+                  {student.status === "late" && (
+                    <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-md text-xs font-bold">
+                      Late
+                    </span>
+                  )}
+                  {student.status === "excused" && (
+                    <span className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-md text-xs font-bold">
+                      Excused
+                    </span>
+                  )}
+                  {student.status === "absent" && (
                     <span className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md text-xs font-bold">
                       Absent
                     </span>
@@ -149,6 +168,17 @@ export function StudentListTab({
                             className="mr-2 text-green-600"
                           />
                           Mark Present
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start h-8 text-sm font-normal"
+                          onClick={() => onToggleStatus(student.id, "excused")}
+                        >
+                          <FileText
+                            size={14}
+                            className="mr-2 text-blue-600"
+                          />
+                          Mark Excused
                         </Button>
                         <Button
                           variant="ghost"

@@ -53,8 +53,19 @@ export default function TeacherLiveMap() {
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
 
-  const selectedZone = zones.find((z) => z.id === selectedId);
+  // Filter zones based on search query and active filter
+  const filteredZones = zones.filter((zone) => {
+    const matchesSearch =
+      zone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      zone.room.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesActive = !showActiveOnly || zone.status === "active";
+    return matchesSearch && matchesActive;
+  });
+
+  const selectedZone = filteredZones.find((z) => z.id === selectedId);
 
   React.useEffect(() => {
     async function fetchClasses() {
@@ -107,7 +118,7 @@ export default function TeacherLiveMap() {
       <div className="flex-1 relative z-0">
         {/* Reusable Component */}
         <TeacherMap
-          zones={zones}
+          zones={filteredZones}
           selectedId={selectedId}
           onSelectZone={setSelectedId}
         />
@@ -124,8 +135,8 @@ export default function TeacherLiveMap() {
                   Campus Monitor
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {zones.filter((z) => z.status === "active").length} Active
-                  Sessions
+                  {filteredZones.filter((z) => z.status === "active").length}{" "}
+                  Active Sessions • {filteredZones.length} Total
                 </p>
               </div>
             </div>
@@ -138,6 +149,8 @@ export default function TeacherLiveMap() {
                 />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full sm:w-48 pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                   placeholder="Find class..."
                 />
@@ -145,6 +158,84 @@ export default function TeacherLiveMap() {
             </div>
           </div>
         </div>
+
+        {/* Quick Navigation Buttons */}
+        <div className="absolute top-24 left-0 right-0 z-[1000] pointer-events-none">
+          <div className="pointer-events-auto mx-2 flex gap-2 justify-start">
+            <button
+              onClick={() => {
+                setShowActiveOnly(false);
+                setSearchQuery("");
+                setSelectedId(null);
+              }}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+                !showActiveOnly && searchQuery === ""
+                  ? "bg-brand-primary text-white border border-brand-primary"
+                  : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+              }`}
+            >
+              <MapPin size={14} />
+              Show All Locations
+            </button>
+            <button
+              onClick={() => {
+                setShowActiveOnly(!showActiveOnly);
+                setSearchQuery("");
+                setSelectedId(null);
+              }}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+                showActiveOnly
+                  ? "bg-emerald-500 text-white border border-emerald-500"
+                  : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+              }`}
+            >
+              <CheckCircle2 size={14} />
+              Active Sessions Only
+            </button>
+            {filteredZones.length > 0 && (
+              <button
+                onClick={() => {
+                  // Reset to first location or deselect
+                  if (filteredZones.length > 0) {
+                    setSelectedId(filteredZones[0].id);
+                  }
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+              >
+                <Target size={14} />
+                Center on Location
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* No Results Overlay */}
+        {filteredZones.length === 0 && zones.length > 0 && (
+          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="bg-card border border-border rounded-2xl shadow-lg p-8 text-center max-w-md mx-4">
+              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 mx-auto text-muted-foreground">
+                <Search size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                No Classes Found
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {searchQuery
+                  ? `No classes match "${searchQuery}"`
+                  : "No active sessions found"}
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowActiveOnly(false);
+                }}
+                className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-bold hover:bg-brand-primary/90 transition-all"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------------------------------------------------------
