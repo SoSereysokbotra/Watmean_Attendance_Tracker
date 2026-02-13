@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, gt, or } from "drizzle-orm";
+import { eq, and, desc, sql, gt, or, ne } from "drizzle-orm";
 import { db } from "../index";
 import {
   classes,
@@ -256,8 +256,7 @@ export class AcademicRepository {
         activeSessionStatus: sql<string>`MAX(${sessions.status})`,
 
         // Count
-        studentCount:
-          sql<number>`count(distinct ${enrollments.studentId})`.mapWith(Number),
+        studentCount: sql<number>`count(distinct ${users.id})`.mapWith(Number),
       })
       .from(classes)
       .leftJoin(
@@ -265,6 +264,10 @@ export class AcademicRepository {
         and(eq(sessions.classId, classes.id), eq(sessions.status, "active")),
       )
       .leftJoin(enrollments, eq(enrollments.classId, classes.id))
+      .leftJoin(
+        users,
+        and(eq(enrollments.studentId, users.id), ne(users.status, "deleted")),
+      )
       .where(eq(classes.teacherId, teacherId))
       .groupBy(classes.id);
 
@@ -300,7 +303,8 @@ export class AcademicRepository {
       .select({ count: sql<number>`count(distinct ${enrollments.studentId})` })
       .from(classes)
       .innerJoin(enrollments, eq(classes.id, enrollments.classId))
-      .where(eq(classes.teacherId, teacherId))
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .where(and(eq(classes.teacherId, teacherId), ne(users.status, "deleted")))
       .then((res) => Number(res[0].count));
 
     // 3. Average Attendance
@@ -461,7 +465,9 @@ export class AcademicRepository {
       })
       .from(enrollments)
       .innerJoin(users, eq(enrollments.studentId, users.id))
-      .where(eq(enrollments.classId, classId));
+      .where(
+        and(eq(enrollments.classId, classId), ne(users.status, "deleted")),
+      );
 
     // Calculate stats for each student
     const studentWithStats = await Promise.all(
@@ -663,7 +669,10 @@ export class AcademicRepository {
       })
       .from(enrollments)
       .innerJoin(classes, eq(enrollments.classId, classes.id))
-      .where(eq(classes.teacherId, teacherId));
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .where(
+        and(eq(classes.teacherId, teacherId), ne(users.status, "deleted")),
+      );
 
     let lowAttendanceCount = 0;
 
@@ -948,7 +957,9 @@ export class AcademicRepository {
       .from(enrollments)
       .innerJoin(classes, eq(enrollments.classId, classes.id))
       .innerJoin(users, eq(enrollments.studentId, users.id))
-      .where(eq(classes.teacherId, teacherId));
+      .where(
+        and(eq(classes.teacherId, teacherId), ne(users.status, "deleted")),
+      );
 
     // 2. For each student, calculate stats across ALL classes taught by this teacher
     const studentsWithStats = await Promise.all(

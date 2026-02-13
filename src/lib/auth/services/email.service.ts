@@ -48,4 +48,32 @@ export class EmailService {
     const subject = `You've been invited to join ${data.className}`;
     await this.provider.sendEmail(email, subject, html);
   }
+
+  /**
+   * Send an admin-generated user invitation email (e.g. teacher/admin onboarding)
+   * @param email - The recipient's email address
+   * @param link - The registration link containing the invite token
+   * @param options - Optional display data such as role and name
+   */
+  static async sendInvitationEmail(
+    email: string,
+    link: string,
+    options?: { role?: string; name?: string },
+  ): Promise<void> {
+    const roleLabel = options?.role
+      ? options.role.charAt(0).toUpperCase() + options.role.slice(1)
+      : "Teacher";
+    const displayName = options?.name || "there";
+
+    const html = `
+      <p>Hi ${displayName},</p>
+      <p>You have been invited to join Watmean as a <strong>${roleLabel}</strong>.</p>
+      <p>To complete your registration, please click the secure link below:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>If you did not expect this invitation, you can safely ignore this email.</p>
+    `;
+
+    const subject = `You're invited as a ${roleLabel} on Watmean`;
+    await this.provider.sendEmail(email, subject, html);
+  }
 }

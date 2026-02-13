@@ -29,7 +29,6 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// Data Interfaces
 interface Student {
   id: string;
   name: string;
@@ -38,7 +37,7 @@ interface Student {
   attendance: number;
   grade: string;
   gradeScore: number;
-  status: "present" | "absent" | "late" | "excused"; // Last class status
+  status: "present" | "absent" | "late" | "excused";
 }
 
 interface ClassDetails {
@@ -58,7 +57,6 @@ export default function ClassDetailsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // Unwrap params using React.use()
   const { id } = use(params);
   const router = useRouter();
 
@@ -88,7 +86,6 @@ export default function ClassDetailsPage({
       const data = await response.json();
       const cls = data.class;
 
-      // Map API data to component state
       setClassData({
         id: cls.id,
         name: cls.name,
@@ -126,7 +123,6 @@ export default function ClassDetailsPage({
     }
   };
 
-  // Filter students based on search
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -134,8 +130,6 @@ export default function ClassDetailsPage({
   );
 
   const removeStudent = (studentId: string) => {
-    // Implement API call to remove student (delete enrollment)
-    // For now, optimistic update
     setStudents(students.filter((s) => s.id !== studentId));
   };
 
@@ -160,7 +154,7 @@ export default function ClassDetailsPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-10">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 pb-10">
       {/* Navigation & Header */}
       <div className="space-y-4">
         <Link
@@ -193,13 +187,16 @@ export default function ClassDetailsPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="hidden sm:flex">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Mail size={16} className="mr-2" />
               Email Class
             </Button>
-            <Link href={`/teacher/active?classId=${id}`}>
-              <Button className="bg-brand-primary hover:bg-brand-primary/90">
+            <Link
+              href={`/teacher/active?classId=${id}`}
+              className="w-full sm:w-auto"
+            >
+              <Button className="bg-brand-primary hover:bg-brand-primary/90 w-full">
                 <CheckCircle2 size={16} className="mr-2" />
                 Take Attendance
               </Button>
@@ -210,7 +207,6 @@ export default function ClassDetailsPage({
 
       {/* Class Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Next Session */}
         <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">
@@ -224,7 +220,6 @@ export default function ClassDetailsPage({
           <p className="text-xs text-muted-foreground mt-1">Regular Class</p>
         </div>
 
-        {/* Total Students */}
         <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">
@@ -240,7 +235,6 @@ export default function ClassDetailsPage({
           </p>
         </div>
 
-        {/* Avg Attendance */}
         <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">
@@ -259,7 +253,6 @@ export default function ClassDetailsPage({
           </div>
         </div>
 
-        {/* Class Average */}
         <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">
@@ -279,16 +272,24 @@ export default function ClassDetailsPage({
         {/* Left: Main Lists */}
         <div className="flex-1 space-y-6">
           {/* Tabs Navigation */}
-          <div className="flex items-center border-b border-border">
+          <div className="flex items-center border-b border-border overflow-x-auto">
             <button
               onClick={() => setActiveTab("students")}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "students" ? "border-brand-primary text-brand-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === "students"
+                  ? "border-brand-primary text-brand-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Students
             </button>
             <button
               onClick={() => setActiveTab("assignments")}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "assignments" ? "border-brand-primary text-brand-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === "assignments"
+                  ? "border-brand-primary text-brand-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               Assignments
             </button>
@@ -298,20 +299,24 @@ export default function ClassDetailsPage({
           {activeTab === "students" && (
             <div className="space-y-4">
               {/* Controls */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="relative w-full sm:max-w-sm">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     size={16}
                   />
                   <Input
                     placeholder="Search students..."
-                    className="pl-10"
+                    className="pl-10 w-full"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
                   <Download size={16} className="mr-2" />
                   Export CSV
                 </Button>
@@ -320,20 +325,22 @@ export default function ClassDetailsPage({
               {/* Student Table */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
+                  <table className="w-full min-w-[800px] text-sm text-left">
                     <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
                       <tr>
-                        <th className="px-6 py-4 font-medium">Student Name</th>
-                        <th className="px-6 py-4 font-medium text-center">
+                        <th className="px-4 sm:px-6 py-4 font-medium">
+                          Student Name
+                        </th>
+                        <th className="px-4 sm:px-6 py-4 font-medium text-center">
                           Attendance
                         </th>
-                        <th className="px-6 py-4 font-medium text-center">
+                        <th className="px-4 sm:px-6 py-4 font-medium text-center">
                           Current Grade
                         </th>
-                        <th className="px-6 py-4 font-medium text-center">
+                        <th className="px-4 sm:px-6 py-4 font-medium text-center">
                           Last Status
                         </th>
-                        <th className="px-6 py-4 font-medium text-right">
+                        <th className="px-4 sm:px-6 py-4 font-medium text-right">
                           Actions
                         </th>
                       </tr>
@@ -344,29 +351,29 @@ export default function ClassDetailsPage({
                           key={student.id}
                           className="hover:bg-muted/30 transition-colors group"
                         >
-                          <td className="px-6 py-4">
+                          <td className="px-4 sm:px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-xs border border-brand-primary/20">
+                              <div className="w-9 h-9 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-xs border border-brand-primary/20 shrink-0">
                                 {student.avatar}
                               </div>
-                              <div>
-                                <p className="font-medium text-foreground">
+                              <div className="min-w-0">
+                                <p className="font-medium text-foreground truncate">
                                   {student.name}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground truncate">
                                   {student.email}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 sm:px-6 py-4 text-center">
                             <span
                               className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getAttendanceColor(student.attendance)}`}
                             >
                               {student.attendance}%
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 sm:px-6 py-4 text-center">
                             <div className="flex flex-col items-center">
                               <span className="font-bold text-foreground">
                                 {student.grade}
@@ -376,7 +383,7 @@ export default function ClassDetailsPage({
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 sm:px-6 py-4 text-center">
                             {student.status === "present" && (
                               <span className="text-emerald-600 text-xs flex items-center justify-center gap-1">
                                 <CheckCircle2 size={12} /> Present
@@ -398,7 +405,7 @@ export default function ClassDetailsPage({
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-4 sm:px-6 py-4 text-right">
                             <Popover>
                               <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-brand-primary p-2 rounded-full hover:bg-brand-primary/10 transition-colors">
@@ -448,7 +455,6 @@ export default function ClassDetailsPage({
   );
 }
 
-// Simple icon for the chart
 function TrendingUpIcon({ className }: { className?: string }) {
   return (
     <svg

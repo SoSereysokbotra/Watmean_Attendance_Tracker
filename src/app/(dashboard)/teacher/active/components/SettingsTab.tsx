@@ -46,28 +46,32 @@ export function SettingsTab({ session, onUpdate }: SettingsTabProps) {
             <label className="text-xs font-bold text-muted-foreground uppercase">
               Target Classroom
             </label>
-            <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
               {isEditingRoom ? (
-                <div className="flex w-full gap-2">
+                <div className="flex w-full flex-col sm:flex-row gap-2">
                   <Input
                     value={room}
                     onChange={(e) => setRoom(e.target.value)}
-                    className="h-8"
+                    className="h-8 flex-1"
                   />
-                  <Button size="sm" onClick={handleUpdateRoom}>
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setIsEditingRoom(false)}
-                  >
-                    Cancel
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleUpdateRoom}>
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsEditingRoom(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <span className="font-medium text-foreground">{room}</span>
+                  <span className="font-medium text-foreground break-all">
+                    {room}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -84,13 +88,13 @@ export function SettingsTab({ session, onUpdate }: SettingsTabProps) {
             <label className="text-sm font-medium text-foreground">
               Geofence Radius
             </label>
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center gap-4 mt-2 flex-wrap">
               <Input
                 type="number"
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
                 onBlur={handleUpdateRadius}
-                className="w-24"
+                className="w-full sm:w-24"
               />
               <span className="text-sm text-muted-foreground">meters</span>
               <Button size="sm" variant="ghost" onClick={handleUpdateRadius}>

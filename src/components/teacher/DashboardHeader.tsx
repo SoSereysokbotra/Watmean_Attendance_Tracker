@@ -12,16 +12,16 @@ export function DashboardHeader({
   initials = "PD",
 }: DashboardHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-brand-dark text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-brand-dark text-foreground">
           Welcome back, {teacherName} 👋
         </h1>
         <p className="text-muted-foreground mt-2">
           Manage your automated geofenced attendance.
         </p>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mt-4 sm:mt-0">
         <button className="relative w-12 h-12 flex items-center justify-center rounded-xl bg-background border border-border shadow-sm hover:bg-muted transition-colors">
           <Bell size={20} className="text-foreground" />
           <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full ring-2 ring-background"></span>

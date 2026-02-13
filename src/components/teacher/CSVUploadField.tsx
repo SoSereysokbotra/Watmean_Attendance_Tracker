@@ -58,7 +58,6 @@ export function CSVUploadField({
   };
 
   const handleFile = async (file: File) => {
-    // Validate file type
     if (!file.name.endsWith(".csv")) {
       alert("Please upload a CSV file");
       return;
@@ -66,12 +65,10 @@ export function CSVUploadField({
 
     setFile(file);
 
-    // Read and parse the file
     const text = await file.text();
     const result = parseStudentEmailCSV(text);
     setParseResult(result);
 
-    // Pass valid emails to parent
     onEmailsParsed(result.valid);
   };
 
@@ -101,11 +98,10 @@ student3@university.edu,Student Three`;
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Upload Area */}
       {!file && (
         <div>
           <div
-            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors ${
+            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 sm:p-8 transition-colors ${
               dragActive
                 ? "border-blue-500 bg-blue-50"
                 : "border-gray-300 bg-gray-50 hover:border-gray-400"
@@ -117,10 +113,10 @@ student3@university.edu,Student Three`;
             onClick={() => inputRef.current?.click()}
           >
             <Upload className="mb-4 h-12 w-12 text-gray-400" />
-            <p className="mb-2 text-lg font-medium text-gray-700">
+            <p className="mb-2 text-center text-base sm:text-lg font-medium text-gray-700">
               Drop CSV file here or click to upload
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-center text-xs sm:text-sm text-gray-500">
               CSV file with student emails
             </p>
             <input
@@ -144,7 +140,6 @@ student3@university.edu,Student Three`;
         </div>
       )}
 
-      {/* File Info and Parse Results */}
       {file && parseResult && (
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
@@ -165,7 +160,6 @@ student3@university.edu,Student Three`;
             </button>
           </div>
 
-          {/* Parse Summary */}
           <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="h-5 w-5" />
@@ -196,7 +190,6 @@ student3@university.edu,Student Three`;
             )}
           </div>
 
-          {/* Preview valid emails */}
           {parseResult.valid.length > 0 && (
             <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
               <p className="mb-2 text-sm font-medium text-gray-700">

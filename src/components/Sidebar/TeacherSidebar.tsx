@@ -130,7 +130,7 @@ export default function TeacherSidebar({
             name: fullName,
             teacherId: data.profile.teacherId,
             initials: initials,
-            department: "Teacher", // You can customize this based on your needs
+            department: "Teacher",
           });
         }
       } catch (error) {
@@ -141,7 +141,7 @@ export default function TeacherSidebar({
   }, []);
 
   const handleLogout = async () => {
-    if (isLoggingOut) return; // Prevent double-click
+    if (isLoggingOut) return;
 
     setIsLoggingOut(true);
     try {
@@ -150,7 +150,6 @@ export default function TeacherSidebar({
       });
 
       if (response.ok) {
-        // Redirect to login page
         router.push("/login");
       } else {
         console.error("Logout failed");
@@ -170,9 +169,8 @@ export default function TeacherSidebar({
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen lg:h-full border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
     >
-      {/* Profile Area */}
       <div
         className={`flex items-center ${
           isOpen ? "px-6 py-4 gap-3" : "justify-center py-4"
@@ -197,7 +195,6 @@ export default function TeacherSidebar({
         )}
       </div>
 
-      {/* Navigation */}
       <div className="p-4 flex-1">
         <SidebarSection title="Menu" isOpen={isOpen}>
           <SidebarItem
@@ -249,7 +246,6 @@ export default function TeacherSidebar({
         </SidebarSection>
       </div>
 
-      {/* Collapse Sidebar Button */}
       <div className="p-4 border-t border-border/15">
         <button
           onClick={toggleSidebar}
@@ -261,7 +257,6 @@ export default function TeacherSidebar({
         </button>
       </div>
 
-      {/* Footer with Sign Out */}
       <div className="p-4 border-t border-border/15">
         <button
           onClick={handleLogout}

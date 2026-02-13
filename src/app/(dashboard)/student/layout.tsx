@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StudentSidebar from "../../../components/Sidebar/StudentSidebar";
 import { Search, Menu } from "lucide-react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
@@ -11,8 +11,25 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const getPageTitle = (path: string) => {
     if (path.includes("/dashboard")) return "Dashboard";
@@ -25,11 +42,19 @@ export default function StudentLayout({
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground transition-colors duration-200">
+      {/* Mobile Backdrop */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${
-          isSidebarOpen ? "block" : "hidden"
-        } lg:block fixed inset-y-0 left-0 z-50`}
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:block`}
       >
         <StudentSidebar
           isOpen={isSidebarOpen}

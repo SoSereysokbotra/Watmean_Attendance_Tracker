@@ -76,8 +76,8 @@ export function StudentsList() {
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm">
-      {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-border p-6 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header - already responsive */}
+      <div className="flex flex-col gap-4 border-b border-border p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">
             Enrolled Students
@@ -87,21 +87,21 @@ export function StudentsList() {
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search students..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 sm:w-64"
+              className="h-10 w-full sm:w-64 rounded-xl border border-border bg-background pl-9 pr-4 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20"
             />
           </div>
           <button
             onClick={() =>
               setStatusFilter(statusFilter === "all" ? "risk" : "all")
             }
-            className={`flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors ${
+            className={`flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-medium whitespace-nowrap transition-colors ${
               statusFilter === "risk"
                 ? "border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:border-rose-800"
                 : "border-border bg-background hover:bg-muted"
@@ -113,16 +113,18 @@ export function StudentsList() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table - overflow-x-auto */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[800px] text-left text-sm">
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
-              <th className="px-6 py-4 font-medium">Student</th>
-              <th className="px-6 py-4 font-medium">Classes</th>
-              <th className="px-6 py-4 font-medium">Attendance Rate</th>
-              <th className="px-6 py-4 font-medium">Status</th>
-              <th className="px-6 py-4 text-right font-medium">Actions</th>
+              <th className="px-4 sm:px-6 py-4 font-medium">Student</th>
+              <th className="px-4 sm:px-6 py-4 font-medium">Classes</th>
+              <th className="px-4 sm:px-6 py-4 font-medium">Attendance Rate</th>
+              <th className="px-4 sm:px-6 py-4 font-medium">Status</th>
+              <th className="px-4 sm:px-6 py-4 text-right font-medium">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -141,29 +143,29 @@ export function StudentsList() {
                   key={student.id}
                   className="group transition-colors hover:bg-muted/30"
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/10 text-sm font-bold text-brand-primary">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-sm font-bold text-brand-primary">
                         {student.avatar}
                       </div>
-                      <div>
-                        <div className="font-medium text-foreground">
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground truncate">
                           {student.name}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground truncate">
                           {student.email}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                  <td className="px-4 sm:px-6 py-4">
+                    <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-xs font-medium text-foreground whitespace-nowrap">
                       {student.classesCount} Classes
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
+                      <div className="h-2 w-16 sm:w-24 overflow-hidden rounded-full bg-muted">
                         <div
                           className={`h-full rounded-full ${
                             student.attendanceRate >= 85
@@ -175,13 +177,13 @@ export function StudentsList() {
                           style={{ width: `${student.attendanceRate}%` }}
                         />
                       </div>
-                      <span className="font-medium">
+                      <span className="font-medium whitespace-nowrap">
                         {student.attendanceRate}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
+                  <td className="px-4 sm:px-6 py-4">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
                       {student.status === "Good" && (
                         <>
                           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -202,7 +204,7 @@ export function StudentsList() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-4 sm:px-6 py-4 text-right">
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus:ring-2 focus:ring-brand-primary/20">
@@ -223,7 +225,7 @@ export function StudentsList() {
                           <button
                             onClick={() =>
                               alert(`View profile for ${student.name}`)
-                            } // Placeholder for profile view
+                            }
                             className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
                           >
                             <div className="h-4 w-4 flex items-center justify-center rounded-full border border-current text-[10px] font-bold">

@@ -22,9 +22,6 @@ const TeacherLocationPicker = dynamic(
   },
 );
 
-// ----------------------------------------------------------------------
-// 1. Custom Input Component (Preserves your exact UI style)
-// ----------------------------------------------------------------------
 const CustomTimeInput = forwardRef(
   ({ value, onClick, placeholder }: any, ref: any) => (
     <div className="relative w-full cursor-pointer group" onClick={onClick}>
@@ -44,9 +41,6 @@ const CustomTimeInput = forwardRef(
 );
 CustomTimeInput.displayName = "CustomTimeInput";
 
-// ----------------------------------------------------------------------
-// 2. Helper to parse string "14:30" -> Date Object
-// ----------------------------------------------------------------------
 const parseTime = (timeStr: string) => {
   if (!timeStr) return null;
   const d = new Date();
@@ -72,12 +66,12 @@ export function CreateClassModal({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    code: "", // Subject Code
+    code: "",
     semester: "",
     room: "",
     schedule: "",
     description: "",
-    lat: 11.5564, // Default PP
+    lat: 11.5564,
     lng: 104.9282,
     radius: 50,
   });
@@ -85,7 +79,6 @@ export function CreateClassModal({
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [manualEmails, setManualEmails] = useState("");
 
-  // Schedule State Helper
   const [scheduleDays, setScheduleDays] = useState<string[]>([]);
   const [scheduleTimes, setScheduleTimes] = useState({ start: "", end: "" });
 
@@ -107,7 +100,6 @@ export function CreateClassModal({
     } else {
       newDays.push(day);
     }
-    // Sort days
     newDays.sort((a, b) => daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b));
 
     setScheduleDays(newDays);
@@ -129,7 +121,6 @@ export function CreateClassModal({
     setLoading(true);
     setError(null);
     try {
-      // Parse manual emails
       const manualList = manualEmails
         .split(/[\n,]/)
         .map((e) => e.trim())
@@ -154,7 +145,6 @@ export function CreateClassModal({
         throw new Error(data.error || "Failed to create class");
       }
 
-      // Success
       onClassCreated?.();
       onClose();
     } catch (error: any) {
@@ -169,7 +159,8 @@ export function CreateClassModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-background/30 animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-foreground/20" onClick={onClose} />
       <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between border-b border-border px-8 py-6">
+        {/* Header - responsive padding */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-8 sm:py-6">
           <div>
             <h2 className="text-xl font-bold text-foreground">
               {step === 1
@@ -194,7 +185,8 @@ export function CreateClassModal({
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-8 py-6">
+        {/* Content - responsive padding */}
+        <div className="max-h-[70vh] overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 flex items-center gap-2">
               <Info className="h-4 w-4" />
@@ -204,7 +196,7 @@ export function CreateClassModal({
 
           {step === 1 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Class Name <span className="text-red-500">*</span>
@@ -238,7 +230,7 @@ export function CreateClassModal({
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Semester <span className="text-red-500">*</span>
@@ -271,7 +263,6 @@ export function CreateClassModal({
                   Class Schedule
                 </label>
                 <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-                  {/* Days Selector */}
                   <div className="space-y-2">
                     <span className="text-xs text-muted-foreground font-medium">
                       Days
@@ -293,13 +284,11 @@ export function CreateClassModal({
                     </div>
                   </div>
 
-                  {/* Time Selector - UPDATED WITH REACT-DATEPICKER */}
                   <div className="space-y-2">
                     <span className="text-xs text-muted-foreground font-medium">
                       Time
                     </span>
                     <div className="flex items-center gap-3">
-                      {/* Start Time */}
                       <div className="relative flex-1">
                         <DatePicker
                           selected={parseTime(scheduleTimes.start)}
@@ -320,7 +309,6 @@ export function CreateClassModal({
 
                       <span className="text-muted-foreground">-</span>
 
-                      {/* End Time */}
                       <div className="relative flex-1">
                         <DatePicker
                           selected={parseTime(scheduleTimes.end)}
@@ -430,7 +418,8 @@ export function CreateClassModal({
           )}
         </div>
 
-        <div className="flex gap-4 border-t border-border bg-muted/30 px-8 py-6">
+        {/* Footer - responsive padding */}
+        <div className="flex gap-4 border-t border-border bg-muted/30 px-4 py-4 sm:px-8 sm:py-6">
           {step > 1 ? (
             <Button variant="outline" onClick={handleBack} className="flex-1">
               Back

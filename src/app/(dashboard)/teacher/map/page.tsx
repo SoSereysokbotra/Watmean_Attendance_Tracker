@@ -104,7 +104,7 @@ export default function TeacherLiveMap() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm flex items-center justify-center">
+      <div className="h-[calc(100dvh-8rem)] bg-card rounded-2xl border border-border shadow-sm flex items-center justify-center">
         <Loader2 className="animate-spin text-brand-primary" size={32} />
         <span className="ml-2 text-sm text-muted-foreground">
           Loading Class Locations...
@@ -114,7 +114,7 @@ export default function TeacherLiveMap() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex group font-sans relative">
+    <div className="h-[calc(100dvh-7rem)] md:h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col md:flex-row group font-sans relative">
       <div className="flex-1 relative z-0">
         {/* Reusable Component */}
         <TeacherMap
@@ -123,9 +123,10 @@ export default function TeacherLiveMap() {
           onSelectZone={setSelectedId}
         />
 
-        {/* Floating Overlay Header */}
-        <div className="absolute top-0 left-0 right-0 p-0.5 z-[1000] pointer-events-none">
-          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3 flex flex-col sm:flex-row justify-between items-center gap-3 m-2">
+        {/* Floating Overlay Container */}
+        <div className="absolute top-0 left-0 right-0 z-[1000] p-2 pointer-events-none flex flex-col gap-2">
+          {/* Header */}
+          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="h-10 w-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary">
                 <Target size={20} />
@@ -157,11 +158,9 @@ export default function TeacherLiveMap() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick Navigation Buttons */}
-        <div className="absolute top-24 left-0 right-0 z-[1000] pointer-events-none">
-          <div className="pointer-events-auto mx-2 flex gap-2 justify-start">
+          {/* Quick Navigation Buttons */}
+          <div className="pointer-events-auto flex gap-2 justify-start flex-wrap">
             <button
               onClick={() => {
                 setShowActiveOnly(false);
@@ -239,20 +238,34 @@ export default function TeacherLiveMap() {
       </div>
 
       {/* ---------------------------------------------------------
-          Right: Sidebar Details
+          Right: Sidebar Details (Mobile Bottom Sheet / Desktop Sidebar)
       --------------------------------------------------------- */}
-      <div className="w-[320px] lg:w-[360px] bg-card border-l border-border hidden md:flex flex-col z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t border-border shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:static md:w-[320px] lg:w-[360px] md:border-l md:border-t-0 md:shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] md:flex md:flex-col md:z-20 md:transform-none ${
+          selectedZone ? "translate-y-0" : "translate-y-full md:translate-y-0"
+        }`}
+        style={{ maxHeight: "60vh" }} // Limit height on mobile
+      >
         {selectedZone ? (
           <>
             {/* Zone Header */}
-            <div className="p-5 border-b border-border">
+            <div className="p-4 md:p-5 border-b border-border">
               <div className="flex justify-between items-start mb-1">
                 <h2 className="text-lg font-bold text-foreground">
                   {selectedZone.name}
                 </h2>
-                <button className="text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors">
-                  <MoreHorizontal size={18} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button className="text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors">
+                    <MoreHorizontal size={18} />
+                  </button>
+                  {/* Mobile Close Button */}
+                  <button
+                    onClick={() => setSelectedId(null)}
+                    className="md:hidden text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <MapPin size={14} /> {selectedZone.room}
@@ -340,7 +353,7 @@ export default function TeacherLiveMap() {
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-muted/10">
+          <div className="hidden md:flex flex-col items-center justify-center h-full p-8 text-center bg-muted/10">
             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 text-muted-foreground animate-pulse">
               <MapPin size={32} />
             </div>

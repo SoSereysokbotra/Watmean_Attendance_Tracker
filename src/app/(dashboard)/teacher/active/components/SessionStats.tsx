@@ -1,8 +1,3 @@
-/**
- * Session statistics cards component
- * Displays session status, attendance percentage, present/absent counts
- */
-
 import { Timer, Users, AlertCircle } from "lucide-react";
 import { AttendanceStats } from "@/hooks/useAttendance";
 import { Session } from "@/types";
@@ -22,7 +17,8 @@ export function SessionStats({
     if (!session?.startTime || !session?.endTime) return null;
     const start = new Date(session.startTime);
     const end = new Date(session.endTime);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
+      return null;
 
     return `${start.toLocaleTimeString([], {
       hour: "2-digit",
@@ -36,21 +32,21 @@ export function SessionStats({
   const timeRange = formatTimeRange();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Status Card */}
       <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
-        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center flex-shrink-0">
           <Timer size={24} />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold text-muted-foreground uppercase">
             Status
           </p>
-          <p className="font-bold text-foreground capitalize">
+          <p className="font-bold text-foreground capitalize truncate">
             {session?.status || "Active"}
           </p>
           {session && (
-            <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+            <p className="text-xs text-green-600 dark:text-green-400 font-medium truncate">
               {timeRange ?? "Time not set"}
             </p>
           )}
@@ -59,8 +55,7 @@ export function SessionStats({
 
       {/* Percentage Card */}
       <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
-        <div className="relative w-12 h-12 flex items-center justify-center">
-          {/* Simple ring visualization */}
+        <div className="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
             <path
               className="text-muted/20"
@@ -82,11 +77,11 @@ export function SessionStats({
             {stats.attendancePercentage}%
           </span>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold text-muted-foreground uppercase">
             Attendance Rate
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground truncate">
             Target: {targetPercentage}%
           </p>
         </div>
@@ -94,10 +89,10 @@ export function SessionStats({
 
       {/* Present Count */}
       <div className="bg-green-50/50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/50 shadow-sm flex items-center gap-4">
-        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full flex items-center justify-center flex-shrink-0">
           <Users size={24} />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase">
             Present
           </p>
@@ -109,10 +104,10 @@ export function SessionStats({
 
       {/* Absent Count */}
       <div className="bg-red-50/50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/50 shadow-sm flex items-center gap-4">
-        <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full flex items-center justify-center flex-shrink-0">
           <AlertCircle size={24} />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase">
             Absent
           </p>

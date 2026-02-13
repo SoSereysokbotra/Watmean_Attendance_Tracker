@@ -1,14 +1,9 @@
 "use client";
 
-/**
- * Teacher Active Class Page
- * Displays live attendance tracking and session management
- */
-
 import { useState, useEffect, useCallback } from "react";
 import { MapPin, Calendar, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useStudents, useAttendance } from "@/hooks"; // Removed useClassData, we will fetch it
+import { useStudents, useAttendance } from "@/hooks";
 import { Student } from "@/types";
 import {
   SessionStats,
@@ -26,14 +21,6 @@ export default function ClassDetailPage() {
   const [activeTab, setActiveTab] = useState("Live Attendance");
   const [sessionData, setSessionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  // We'll initialize useStudents with empty array and update it when data loads
-  // However, useStudents hook might expect initial data.
-  // If useStudents manages state internally, we might need to useEffect to setStudents.
-  // For now, let's assume we can pass the fetched students to the tabs directly
-  // or that useStudents can be initialized later.
-  // Actually, looking at the previous code: const { students, toggleStatus, ... } = useStudents(INITIAL_STUDENTS);
-  // I will assume I need to fetch first, then render the hook-dependent parts.
 
   const [initialStudents, setInitialStudents] = useState<Student[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -240,29 +227,30 @@ function ActiveSessionView({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20 px-4 sm:px-6 lg:px-8">
       {/* Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
             {classInfo.name}
           </h1>
-          <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+          <div className="flex items-center gap-4 mt-2 text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Calendar size={16} /> {classInfo.batch}
             </span>
-            <span className="w-1 h-1 bg-border rounded-full"></span>
+            <span className="w-1 h-1 bg-border rounded-full hidden sm:inline-block"></span>
             <span className="flex items-center gap-1">
               <MapPin size={16} /> {session.room || classInfo.room}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleRefresh}
             disabled={refreshing}
             title="Refresh to see newly joined students"
+            className="w-full sm:w-auto"
           >
             <RefreshCw
               size={16}
@@ -270,7 +258,7 @@ function ActiveSessionView({
             />
             Refresh
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className="w-full sm:w-auto">
             <Download size={16} className="mr-2" /> Export CSV
           </Button>
         </div>
@@ -280,13 +268,13 @@ function ActiveSessionView({
       <SessionStats session={session} stats={stats} targetPercentage={90} />
 
       {/* Tabs Navigation */}
-      <div className="border-b border-border">
-        <div className="flex gap-6">
+      <div className="border-b border-border overflow-x-auto">
+        <div className="flex gap-6 min-w-max px-1">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+              className={`pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeTab === tab
                   ? "border-brand-primary text-brand-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"

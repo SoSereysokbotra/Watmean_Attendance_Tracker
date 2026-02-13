@@ -37,8 +37,8 @@ export class CookieUtil {
   }
 
   static async setAccessTokenCookie(token: string) {
-    // Parse "15m" to milliseconds
-    const expiresIn = 15 * 60 * 1000;
+    // Parse "7d" to milliseconds
+    const expiresIn = 7 * 24 * 60 * 60 * 1000;
     const expires = new Date(Date.now() + expiresIn);
     await this.setCookie(authConfig.cookies.accessToken, token, expires);
   }

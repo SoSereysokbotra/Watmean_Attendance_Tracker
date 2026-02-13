@@ -6,9 +6,9 @@ import {
 } from "@/lib/auth/middleware/auth.middleware";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     sessionId: string;
-  };
+  }>;
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -24,7 +24,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ message: "User not found" }, { status: 401 });
     }
 
-    const { sessionId } = params;
+    const { sessionId } = await params;
 
     // Get the token to verify ownership
     const sessions = await RefreshTokenRepository.getActiveSessions(user.id);

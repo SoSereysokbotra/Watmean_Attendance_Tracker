@@ -19,6 +19,7 @@ export interface SignupRequest {
   fullName: string;
   password: string;
   role?: UserRole;
+  token?: string;
 }
 
 export interface LoginRequest {

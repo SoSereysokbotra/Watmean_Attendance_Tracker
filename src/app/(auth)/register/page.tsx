@@ -1,20 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { User, Mail, Lock, ArrowRight } from "lucide-react";
 import { AuthLayout } from "../../../components/auth/AuthLayout";
 import { AuthInput } from "../../../components/ui/AuthInput";
 import { FormError } from "../../../components/ui/FormError";
 import { ErrorAlert } from "../../../components/ui/ErrorAlert";
-import { useState } from "react";
+import { useState, Suspense, useEffect } from "react";
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInviteEmailLocked, setIsInviteEmailLocked] = useState(false);
+
+  // Auto-fill email when using an invitation token
+  useEffect(() => {
+    const loadInvitation = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(`/api/auth/invitations/${token}`);
+        const data = await res.json();
+        if (data.success && data.data?.email) {
+          setEmail(data.data.email);
+          setIsInviteEmailLocked(true);
+        }
+      } catch (error) {
+        console.error("Failed to load invitation details", error);
+      }
+    };
+
+    loadInvitation();
+  }, [token]);
 
   const [globalError, setGlobalError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState({
@@ -57,7 +88,8 @@ export default function SignupPage() {
           email,
           fullName: name,
           password,
-          role: "student", // Default role, you can add a selector if needed
+          role: "student", // Default role, overridden by backend if token is valid
+          token: token || undefined,
         }),
         credentials: "include", // Important for cookies
       });
@@ -117,6 +149,7 @@ export default function SignupPage() {
             helperText="Please use your .edu email address for verification."
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isInviteEmailLocked}
           />
           <FormError message={fieldErrors.email} />
         </div>

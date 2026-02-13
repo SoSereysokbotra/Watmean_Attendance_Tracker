@@ -11,7 +11,7 @@ export interface ProfileData {
 }
 
 interface UserProfileProps {
-  role: "Student" | "Teacher";
+  role: "Student" | "Teacher" | "Admin" | string;
   userId: string;
   userData: ProfileData;
   onSave?: (data: ProfileData) => Promise<void>;
@@ -49,7 +49,8 @@ export const UserProfileSettings = ({
 
   return (
     <>
-      <div className="px-8 py-6 border-b border-border -mx-8 -mt-8 mb-8">
+      {/* Header with responsive padding and negative margins */}
+      <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 border-b border-border -mx-4 sm:-mx-6 md:-mx-8 -mt-4 sm:-mt-6 md:-mt-8 mb-8">
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
           Profile Information
         </h2>
@@ -153,7 +154,8 @@ export const UserProfileSettings = ({
         </div>
       </div>
 
-      <div className="px-8 py-5 border-t border-border -mx-8 -mb-8 mt-8 flex items-center justify-end gap-3 rounded-b-3xl bg-muted/20">
+      {/* Footer with responsive padding and negative margins */}
+      <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t border-border -mx-4 sm:-mx-6 md:-mx-8 -mb-4 sm:-mb-6 md:-mb-8 mt-8 flex items-center justify-end gap-3 rounded-b-3xl bg-muted/20">
         <button
           onClick={() => setFormData(userData)}
           className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-colors"

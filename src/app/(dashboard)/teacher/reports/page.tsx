@@ -146,7 +146,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12 py-4">
         {[
           {
             label: "Avg. Attendance",
@@ -194,7 +194,7 @@ export default function ReportsPage() {
               className={`h-1 w-12 rounded-full mb-6 transition-all duration-500 group-hover:w-20 ${stat.accent}`}
             />
             <div className="flex items-baseline gap-2">
-              <h3 className="text-5xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform origin-left">
+              <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform origin-left">
                 {stat.val}
               </h3>
               {/* Trend Badge */}
@@ -218,7 +218,7 @@ export default function ReportsPage() {
             </div>
             {/* Hover Icon Effect */}
             <div
-              className={`absolute -right-4 top-0 opacity-0 group-hover:opacity-10 group-hover:translate-x-4 transition-all duration-500 ${stat.colorClass}`}
+              className={`absolute -right-4 top-0 opacity-0 group-hover:opacity-10 group-hover:translate-x-4 transition-all duration-500 ${stat.colorClass} hidden sm:block`}
             >
               {stat.icon}
             </div>
@@ -227,12 +227,12 @@ export default function ReportsPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-8 shadow-sm">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
             Weekly Trend (Last 7 Days)
           </h3>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] sm:h-[300px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trend.length > 0 ? trend : []}>
                 <defs>
@@ -295,11 +295,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-8 shadow-sm">
+        <div className="bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm">
           <h3 className="text-lg font-bold text-foreground mb-6">
             Class Performance
           </h3>
-          <div className="h-[300px] w-full">
+          <div className="h-[250px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"

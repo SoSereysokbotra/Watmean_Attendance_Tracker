@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/popover";
 import Link from "next/link";
 import { CreateClassModal } from "@/components/teacher/CreateClassModal";
-// import { toast } from "sonner"; // Sonner not available
 
 interface Class {
   id: string;
@@ -35,7 +34,7 @@ interface Class {
   totalStudents?: number;
   progress?: number;
   schedule: string;
-  location?: string; // API might return 'room'
+  location?: string;
   room?: string;
   status?: "active" | "upcoming" | "ended";
   colorTheme?: string;
@@ -67,7 +66,6 @@ export default function TeacherClassesPage() {
       setClasses(data.classes);
     } catch (error) {
       console.error("Error fetching classes:", error);
-      // toast.error("Failed to load classes");
     } finally {
       setLoading(false);
     }
@@ -111,14 +109,11 @@ export default function TeacherClassesPage() {
 
       if (response.ok) {
         setClasses(classes.filter((c) => c.id !== id));
-        // toast.success("Class deleted successfully");
       } else {
         console.error("Failed to delete class");
-        // toast.error("Failed to delete class");
       }
     } catch (error) {
       console.error("Error deleting class:", error);
-      // toast.error("Error deleting class");
     }
   };
 
@@ -144,7 +139,7 @@ export default function TeacherClassesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -153,15 +148,15 @@ export default function TeacherClassesPage() {
             Manage and monitor all your classes
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               size={16}
             />
             <Input
               placeholder="Search classes..."
-              className="pl-10 w-64"
+              className="pl-10 w-full"
               value={searchTerm}
               onChange={(e) => {
                 const params = new URLSearchParams(window.location.search);
@@ -240,7 +235,7 @@ export default function TeacherClassesPage() {
             </PopoverContent>
           </Popover>
           <Button
-            className="bg-brand-primary hover:bg-brand-primary/90"
+            className="bg-brand-primary hover:bg-brand-primary/90 w-full sm:w-auto"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus size={16} className="mr-2" />
@@ -307,26 +302,7 @@ export default function TeacherClassesPage() {
               </div>
             </div>
 
-            <div className="mb-6">
-              {/* <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Attendance Rate</span>
-                 <span className="font-bold">{cls.attendanceRate}%</span>
-              </div> */}
-              {/* <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    cls.attendanceRate >= 90
-                      ? "bg-emerald-500"
-                      : cls.attendanceRate >= 80
-                        ? "bg-amber-500"
-                        : "bg-rose-500"
-                  }`}
-                  style={{ width: `${cls.attendanceRate}%` }}
-                />
-              </div> */}
-            </div>
-
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Link
                 href={`/teacher/active?classId=${cls.id}`}
                 className="flex-1 py-2.5 text-center bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors text-sm"

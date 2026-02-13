@@ -71,7 +71,7 @@ export const SettingsLayout = ({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 w-full bg-card rounded-3xl shadow-sm border border-border min-h-[200px] p-10 relative">
+          <div className="flex-1 w-full bg-card rounded-3xl shadow-sm border border-border min-h-[200px] p-4 sm:p-6 lg:p-10 relative">
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               {children}
             </div>

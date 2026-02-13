@@ -39,8 +39,8 @@ export function Modal({
           className,
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-8 py-6">
+        {/* Header - responsive padding */}
+        <div className="flex items-center justify-between border-b border-border px-4 sm:px-8 py-4 sm:py-6">
           <div>
             <h2 className="text-xl font-bold text-foreground">{title}</h2>
             {description && (
@@ -55,8 +55,10 @@ export function Modal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="max-h-[75vh] overflow-y-auto px-8 py-6">{children}</div>
+        {/* Content - responsive padding */}
+        <div className="max-h-[75vh] overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+// page.tsx (modified for mobile)
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -68,7 +69,6 @@ interface Session {
   total: number;
   room: string;
   classId: string;
-  // Raw data for editing
   startTime?: string;
   endTime?: string;
   date?: string;
@@ -179,7 +179,7 @@ export default function TeacherDashboardPage() {
 
   const [newSession, setNewSession] = useState({
     classId: "",
-    className: "", // For display/fallback
+    className: "",
     room: "",
     date: new Date().toISOString().split("T")[0],
     startTime: "08:00",
@@ -196,7 +196,6 @@ export default function TeacherDashboardPage() {
     setLaunching(true);
 
     try {
-      // Construct start and end times
       const startDateTime = new Date(
         `${newSession.date}T${newSession.startTime}`,
       );
@@ -219,13 +218,10 @@ export default function TeacherDashboardPage() {
       });
 
       if (response.ok) {
-        // Success
         setIsModalOpen(false);
         setEditingSessionId(null);
-        // Redirect to active session view
         router.push("/teacher/active");
       } else if (response.status === 409) {
-        // Active session already exists
         const data = await response.json();
         if (
           confirm(
@@ -254,7 +250,7 @@ export default function TeacherDashboardPage() {
 
       if (response.ok) {
         setRecentSessions((prev) => prev.filter((s) => s.id !== id));
-        fetchStats(); // Refresh stats
+        fetchStats();
       } else {
         alert("Failed to delete session");
       }
@@ -268,7 +264,6 @@ export default function TeacherDashboardPage() {
     router.push(`/teacher/classes/${id}`);
   };
 
-  // Real Stats Data
   const stats = [
     {
       title: "Total Classes",
@@ -302,26 +297,10 @@ export default function TeacherDashboardPage() {
 
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
 
-  const handleEditSession = (session: any) => {
-    // Parse the display time back to HH:mm if needed, but session object likely has formatted time
-    // We need the raw data really.
-    // Ideally we should fetch session details or store raw data.
-    // For now, let's try to infer or just set basic info and let user edit.
-    // We need to find the class to get the room/radius defaults if not present
-    // But `session` here is from `recentSessions` which is a processed view model.
-    // Let's iterate `classes` to find one matching the title? Unreliable.
-    // Better to have classId in session.
-    // `recentSessions` creation in `fetchStats` maps logic. Let's assume we can get classId there maybe?
-    // Looking at `fetchStats`, `recentSessions` does NOT have classId.
-    // I should update `fetchStats` or just make do.
-    // Actually `AcademicRepository.getRecentSessions` returns `classId` properly!
-    // But `fetchStats` in component MAPPED it out. I need to update `fetchStats` mapping first.
-  };
-
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-brand-primary/30 pb-20">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        {/* --- Welcome & Action --- */}
+        {/* Welcome & Action */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -350,14 +329,14 @@ export default function TeacherDashboardPage() {
               setShowCustomization(false);
               setIsModalOpen(true);
             }}
-            className="group flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 active:scale-95"
+            className="w-full sm:w-auto group flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 active:scale-95"
           >
             <Plus className="h-5 w-5" />
             Launch Session
           </button>
         </div>
 
-        {/* --- Stats Cards --- */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, idx) => (
             <div
@@ -391,8 +370,8 @@ export default function TeacherDashboardPage() {
           ))}
         </div>
 
-        {/* --- Tabs --- */}
-        <div className="border-b border-border">
+        {/* Tabs - added horizontal scroll for mobile */}
+        <div className="border-b border-border overflow-x-auto pb-2">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {[
               { id: "overview", label: "Overview" },
@@ -416,10 +395,9 @@ export default function TeacherDashboardPage() {
           </nav>
         </div>
 
-        {/* --- Tab Content --- */}
+        {/* Tab Content */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Left Column: Sessions */}
             <div className="lg:col-span-3 space-y-6">
               <div className="rounded-2xl border border-border bg-card shadow-sm">
                 <div className="flex items-center justify-between border-b border-border p-6">
@@ -448,8 +426,6 @@ export default function TeacherDashboardPage() {
                         key={session.id}
                         className="group flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        {/* Session Item UI ... */}
-                        {/* (Simplified for brevity as we focus on creation) */}
                         <div className="flex items-start gap-4">
                           <div className="bg-emerald-100 text-emerald-600 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold shadow-sm">
                             {session.title.charAt(0)}
@@ -475,31 +451,24 @@ export default function TeacherDashboardPage() {
         )}
 
         {activeTab === "students" && <StudentsList />}
-
       </main>
 
-      {/* --- MODAL (Clean & Minimal) --- */}
+      {/* Create Class Modal */}
       <CreateClassModal
         isOpen={
           isModalOpen && !editingSessionId && !launching && isCreatingClass
         }
         onClose={() => {
           setIsCreatingClass(false);
-          // If we just closed the create modal, we might want to keep the main modal open?
-          // Or just close everything. Let's close everything for now, or revert to Select mode.
-          // User asked for "Launch Session" to select class. If they cancel creation, maybe go back to select?
-          // For simplicity, let's close the modal completely or go back.
-          // Actually, let's just close the modal.
           setIsModalOpen(false);
         }}
         onClassCreated={() => {
           fetchClasses();
           setIsCreatingClass(false);
-          // After creating, maybe auto-select the new class?
-          // For now, let's just go back to "Select Class" mode.
         }}
       />
 
+      {/* Launch/Edit Session Modal - made responsive */}
       {isModalOpen &&
         mounted &&
         !isCreatingClass &&
@@ -510,9 +479,9 @@ export default function TeacherDashboardPage() {
               onClick={() => setIsModalOpen(false)}
             />
 
-            <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-full sm:max-w-2xl mx-4 overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-border px-8 py-6">
+              <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-8 sm:py-6">
                 <div>
                   <h2 className="text-xl font-bold text-foreground">
                     {editingSessionId ? "Edit Session" : "Launch New Session"}
@@ -531,13 +500,13 @@ export default function TeacherDashboardPage() {
                 </button>
               </div>
 
-              <div className="max-h-[75vh] overflow-y-auto px-8 py-6">
+              <div className="max-h-[75vh] overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
                 <form
                   id="session-form"
                   onSubmit={handleCreateSession}
                   className="space-y-6"
                 >
-                  {/* --- Class Selection (Always Visible) --- */}
+                  {/* Class Selection */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Select Class <span className="text-red-500">*</span>
@@ -546,13 +515,11 @@ export default function TeacherDashboardPage() {
                     <Select
                       required
                       value={newSession.classId}
-                      /* Shadcn uses onValueChange which passes the string directly, not an event */
                       onValueChange={(value: string) => {
                         const selectedClass = classes.find(
                           (c) => c.id === value,
                         );
 
-                        // Helper to parse schedule string (e.g., "Mon 10:15 - 11:00")
                         let parsedStart = "08:00";
                         let parsedEnd = "10:00";
 
@@ -563,35 +530,6 @@ export default function TeacherDashboardPage() {
                             );
 
                             if (timeMatch) {
-                              // Helper to convert to 24h format HH:mm
-                              const to24h = (
-                                timeStr: string,
-                                isPm: boolean,
-                              ) => {
-                                let [hours, minutes] = timeStr
-                                  .split(":")
-                                  .map(Number);
-                                if (!minutes) minutes = 0;
-
-                                if (isPm && hours < 12) hours += 12;
-                                if (!isPm && hours === 12) hours = 0;
-
-                                return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-                              };
-
-                              const fullString =
-                                selectedClass.schedule.toLowerCase();
-                              const isPm = fullString.includes("pm");
-                              // Simple heuristic: if "pm" is present, assume the later time is PM.
-                              // If start time > end time (symbolically), or if clear AM/PM markers exist, handle better.
-                              // For now, let's use a robust approach for "10:15 - 11:00" (usually 24h or clear context)
-                              // Re-using logic from repository for consistency but simplified for UI input (HH:mm)
-
-                              const startRaw = timeMatch[1];
-                              const endRaw = timeMatch[2];
-
-                              // Let's try to normalize.
-                              // If inputs are already 24h-ish (e.g. 14:00), utilize that.
                               const normalizeTime = (t: string) => {
                                 if (!t.includes(":"))
                                   return `${t.padStart(2, "0")}:00`;
@@ -599,21 +537,20 @@ export default function TeacherDashboardPage() {
                                 return `${h.padStart(2, "0")}:${m}`;
                               };
 
-                              parsedStart = normalizeTime(startRaw);
-                              parsedEnd = normalizeTime(endRaw);
+                              parsedStart = normalizeTime(timeMatch[1]);
+                              parsedEnd = normalizeTime(timeMatch[2]);
                             }
                           } catch (e) {
                             console.error("Error parsing schedule:", e);
                           }
                         } else {
-                          // Default to current time rounded to next 15 mins if no schedule
                           const now = new Date();
                           const remainder = 15 - (now.getMinutes() % 15);
                           now.setMinutes(now.getMinutes() + remainder);
                           parsedStart = now.toTimeString().slice(0, 5);
 
                           const end = new Date(now);
-                          end.setHours(end.getHours() + 1); // Default 1 hour duration
+                          end.setHours(end.getHours() + 1);
                           parsedEnd = end.toTimeString().slice(0, 5);
                         }
 
@@ -667,17 +604,7 @@ export default function TeacherDashboardPage() {
                     </Select>
                   </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setIsCreatingClass(true)}
-                      className="text-sm text-brand-primary hover:underline"
-                    >
-                      + Create New Class
-                    </button>
-                  </div>
-
-                  {/* --- Summary Card (Visible when Class Selected) --- */}
+                  {/* Summary Card */}
                   {newSession.classId && !showCustomization && (
                     <div className="rounded-2xl border border-border bg-muted/30 p-5 space-y-4 animate-in slide-in-from-top-2">
                       <div className="flex items-center gap-3">
@@ -739,7 +666,7 @@ export default function TeacherDashboardPage() {
                     </div>
                   )}
 
-                  {/* --- Advanced Customization (Hidden by default) --- */}
+                  {/* Advanced Customization */}
                   {showCustomization && (
                     <div className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-4">
                       <div className="flex items-center justify-between">
@@ -775,7 +702,7 @@ export default function TeacherDashboardPage() {
                       </div>
 
                       {/* Time Details */}
-                      <div className="grid grid-cols-2 gap-6 md:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <div className="space-y-2">
                           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Start Time
@@ -843,7 +770,7 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Geofence Details */}
+                      {/* Geofence */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
@@ -876,7 +803,8 @@ export default function TeacherDashboardPage() {
                 </form>
               </div>
 
-              <div className="flex gap-4 border-t border-border bg-muted/30 px-8 py-6">
+              {/* Footer */}
+              <div className="flex gap-4 border-t border-border bg-muted/30 px-4 py-4 sm:px-8 sm:py-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

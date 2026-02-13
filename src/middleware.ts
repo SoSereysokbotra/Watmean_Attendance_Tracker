@@ -36,11 +36,11 @@ export async function middleware(request: NextRequest) {
       // Redirect based on role
       if (role === "teacher") {
         return NextResponse.redirect(
-          new URL("/teacher/dashboard", request.url),
+          new URL("/teacher", request.url),
         );
       } else if (role === "student") {
         return NextResponse.redirect(
-          new URL("/student/dashboard", request.url),
+          new URL("/student", request.url),
         );
       } else if (role === "admin") {
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/teacher") && role !== "teacher") {
         if (role === "student") {
           return NextResponse.redirect(
-            new URL("/student/dashboard", request.url),
+            new URL("/student", request.url),
           );
         } else if (role === "admin") {
           // Admin might have access, but strictly per requirements:
@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/student") && role !== "student") {
         if (role === "teacher") {
           return NextResponse.redirect(
-            new URL("/teacher/dashboard", request.url),
+            new URL("/teacher", request.url),
           );
         }
         return NextResponse.redirect(new URL("/login", request.url));
@@ -110,13 +110,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
