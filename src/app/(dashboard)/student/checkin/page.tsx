@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { MapPin, Loader2, Info, Target, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -46,7 +46,7 @@ interface ActiveSession {
   };
 }
 
-export default function LiveMapView() {
+function LiveMapViewContent() {
   const searchParams = useSearchParams();
   const classId = searchParams.get("classId");
 
@@ -310,5 +310,13 @@ export default function LiveMapView() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function LiveMapView() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <LiveMapViewContent />
+    </Suspense>
   );
 }

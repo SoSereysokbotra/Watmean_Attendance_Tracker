@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { JoinClassModal } from "@/components/student/JoinClassModal";
 
-export default function StudentClassesPage() {
+function StudentClassesContent() {
   const router = useRouter();
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,5 +282,13 @@ export default function StudentClassesPage() {
         onClassJoined={fetchClasses}
       />
     </>
+  );
+}
+
+export default function StudentClassesPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <StudentClassesContent />
+    </Suspense>
   );
 }

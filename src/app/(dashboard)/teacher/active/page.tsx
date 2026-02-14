@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { MapPin, Calendar, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudents, useAttendance } from "@/hooks";
@@ -14,7 +14,7 @@ import {
 } from "./components";
 import { useSearchParams } from "next/navigation";
 
-export default function ClassDetailPage() {
+function ClassDetailPageContent() {
   const searchParams = useSearchParams();
   const classId = searchParams.get("classId");
 
@@ -324,5 +324,13 @@ function ActiveSessionView({
         />
       )}
     </div>
+  );
+}
+
+export default function ClassDetailPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <ClassDetailPageContent />
+    </Suspense>
   );
 }

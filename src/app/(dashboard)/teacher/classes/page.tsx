@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Calendar,
@@ -125,7 +125,7 @@ export function DeleteClassButton({
 }
 
 // --- Main Page ---
-export default function TeacherClassesPage() {
+function TeacherClassesContent() {
   const router = useRouter();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -383,5 +383,13 @@ export default function TeacherClassesPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function TeacherClassesPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <TeacherClassesContent />
+    </Suspense>
   );
 }
