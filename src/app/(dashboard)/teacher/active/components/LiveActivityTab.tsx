@@ -1,8 +1,3 @@
-/**
- * Live attendance activity tab component
- * Shows recent student check-ins
- */
-
 import { CheckCircle2 } from "lucide-react";
 import { Student } from "@/types";
 
@@ -18,17 +13,17 @@ export function LiveActivityTab({ students }: LiveActivityTabProps) {
       <div className="space-y-3">
         <h3 className="font-bold text-foreground">Recent Activity</h3>
         {presentStudents.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground bg-card rounded-xl border border-dashed border-border">
+          <div className="text-center py-10 text-muted-foreground bg-card rounded-xl border border-dashed border-border px-4">
             <p>No check-ins yet</p>
           </div>
         ) : (
           presentStudents.map((student) => (
             <div
               key={student.id}
-              className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm"
+              className="flex flex-wrap items-center justify-between p-3 sm:p-4 bg-card border border-border rounded-xl shadow-sm gap-2"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0">
                   <img
                     src={
                       student.avatar ||
@@ -38,21 +33,21 @@ export function LiveActivityTab({ students }: LiveActivityTabProps) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div>
-                  <p className="font-bold text-foreground text-sm">
+                <div className="min-w-0">
+                  <p className="font-bold text-foreground text-sm truncate">
                     {student.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground truncate">
                     Checked in at {student.checkInTime || "N/A"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold flex items-center gap-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap">
                   <CheckCircle2 size={12} /> Verified
                 </span>
                 {student.distance && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {student.distance} away
                   </span>
                 )}

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MapPin,
@@ -100,15 +100,67 @@ export default function StudentSidebar({
   isOpen,
   toggleSidebar,
 }: StudentSidebarProps) {
-  const studentName = "So Sereysokbotra";
-  const studentId = "STU-2024-789";
-  const studentInitials = "AJ";
+  const router = useRouter();
+  const [user, setUser] = React.useState<{
+    id: string; // Add id
+    name: string;
+    studentId?: string; // Change to optional
+    student_id?: string; // Add student_id (optional, defensive)
+    initials: string;
+    profileImage?: string;
+  } | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/student/dashboard");
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data for sidebar", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent double-click
+
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Redirect to login page
+        router.push("/login");
+      } else {
+        console.error("Logout failed");
+        setIsLoggingOut(false);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
+    }
+  };
+
+  const studentName = user?.name || "Loading...";
+  // Show Loading... only if user is null. If user exists but no studentId, show Not Assigned
+  const studentId = user
+    ? user.studentId || user.student_id || "Not Assigned"
+    : "Loading...";
+  const studentInitials = user?.initials || "..";
+  const profileImage = user?.profileImage;
 
   return (
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen lg:h-full border-r border-border flex flex-col overflow-y-auto transition-all duration-300 ease-in-out`}
     >
       {/* Profile Area */}
       <div
@@ -118,9 +170,17 @@ export default function StudentSidebar({
       >
         {/* Profile Avatar */}
         <div className="relative shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-            {studentInitials}
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={studentName}
+              className="w-10 h-10 rounded-full object-cover border-2 border-brand-primary"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {studentInitials}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
         </div>
 
@@ -200,12 +260,18 @@ export default function StudentSidebar({
       {/* Footer with Sign Out */}
       <div className="p-4 border-t border-border/15">
         <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
           className={`flex items-center ${
             isOpen ? "gap-2 justify-start" : "justify-center"
-          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full`}
+          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full ${
+            isLoggingOut ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           <LogOut size={isOpen ? 14 : 18} />
-          {isOpen && <span>Sign Out</span>}
+          {isOpen && (
+            <span>{isLoggingOut ? "Signing Out..." : "Sign Out"}</span>
+          )}
         </button>
       </div>
     </aside>

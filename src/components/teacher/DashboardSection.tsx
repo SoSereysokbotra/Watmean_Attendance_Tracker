@@ -17,9 +17,9 @@ export function DashboardSection({
 }: DashboardSectionProps) {
   return (
     <div
-      className={`bg-card rounded-3xl border border-border p-6 shadow-sm ${className}`}
+      className={`bg-card rounded-3xl border border-border p-4 sm:p-6 shadow-sm ${className}`}
     >
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
         <h3 className="font-bold text-lg text-foreground">{title}</h3>
         {action}
       </div>

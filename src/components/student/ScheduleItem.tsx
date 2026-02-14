@@ -60,9 +60,9 @@ export function ScheduleItem({
         <span className="block text-xs text-muted-foreground">{period}</span>
       </div>
       <div className={`h-10 w-1 ${config.dotColor} rounded-full`}></div>
-      <div>
-        <h4 className="font-bold text-foreground">{title}</h4>
-        <p className="text-xs text-muted-foreground">{location}</p>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-foreground truncate">{title}</h4>
+        <p className="text-xs text-muted-foreground truncate">{location}</p>
       </div>
       {showCheckIn ? (
         <Link

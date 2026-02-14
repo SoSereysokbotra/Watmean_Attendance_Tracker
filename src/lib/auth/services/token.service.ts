@@ -61,6 +61,15 @@ export class TokenService {
       };
     }
 
+    if (user.status === "blocked" || user.status === "deleted") {
+      // Revoke token family if user is blocked or deleted
+      await RefreshTokenRepository.revokeToken(tokenHash);
+      return {
+        success: false,
+        message: "Account is inactive.",
+      };
+    }
+
     // Token rotation: Revoke old token
     await RefreshTokenRepository.revokeToken(tokenHash);
 
@@ -97,7 +106,7 @@ export class TokenService {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.full_name,
+          fullName: user.full_name || "",
           role: user.role as any,
         },
       },

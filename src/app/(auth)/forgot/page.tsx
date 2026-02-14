@@ -13,31 +13,56 @@ import { useRouter } from "next/navigation";
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError("");
     setFieldErrors({ email: "" });
-    // Handle reset logic here
-    let hasError = false;
+
+    // Basic client-side validation
     if (!email) {
       setFieldErrors({ email: "Email is required" });
       return;
     }
-    if (hasError) return;
 
-    router.push("/forgot/verify");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/password/forgot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        router.push("/forgot/verify");
+      } else {
+        setGlobalError(
+          data.message || "Failed to send reset code. Please try again.",
+        );
+      }
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      setGlobalError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <AuthLayout
       rightSideTitle="Locked out?"
       rightSideDescription="It happens to the best of us. We'll help you get back into your account safely so you don't miss any attendance check-ins."
-      // Overriding the default features for this specific context
       rightSideFeatures={[
         "Secure Recovery Link",
         "24/7 Account Support",
@@ -85,14 +110,16 @@ export default function ForgotPasswordPage() {
               placeholder="name@university.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
             />
             <FormError message={fieldErrors.email} />
           </div>
           <button
             type="submit"
-            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200"
+            disabled={isLoading}
+            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Reset Password
+            {isLoading ? "Sending..." : "Reset Password"}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </form>

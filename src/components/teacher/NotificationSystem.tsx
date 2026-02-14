@@ -140,8 +140,8 @@ export function NotificationSystem() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - responsive */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Bell className="text-foreground" size={20} />
@@ -169,8 +169,8 @@ export function NotificationSystem() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto">
+      {/* Filter Tabs - already has overflow-x-auto */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {["all", "attendance", "late", "absent", "system", "reminder"].map(
           (type) => (
             <button
@@ -262,7 +262,6 @@ export function NotificationSystem() {
         )}
       </div>
 
-      {/* Notification Settings */}
       <div className="bg-muted/50 p-4 rounded-xl">
         <div className="flex items-center justify-between">
           <div>

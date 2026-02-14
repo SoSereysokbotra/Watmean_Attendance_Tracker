@@ -1,9 +1,10 @@
+// layout.tsx (unchanged – already responsive)
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TeacherSidebar from "@/components/Sidebar/TeacherSidebar";
 import { Search, Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 
 export default function TeacherLayout({
   children,
@@ -11,7 +12,25 @@ export default function TeacherLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const getPageTitle = (path: string) => {
     if (path.includes("/dashboard")) return "Dashboard";
@@ -26,11 +45,19 @@ export default function TeacherLayout({
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground transition-colors duration-200">
+      {/* Mobile Backdrop */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${
-          isSidebarOpen ? "block" : "hidden"
-        } lg:block fixed inset-y-0 left-0 z-50`}
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:block lg:h-screen lg:sticky lg:top-0`}
       >
         <TeacherSidebar
           isOpen={isSidebarOpen}
@@ -38,12 +65,8 @@ export default function TeacherLayout({
         />
       </div>
 
-      {/* Main Content Wrapper */}
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          isSidebarOpen ? "lg:ml-64" : "lg:ml-20"
-        }`}
-      >
+      {/* Main Content Wrapper - uses flex-1 to take remaining space */}
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         {/* Top Header */}
         <header className="h-18 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -67,6 +90,16 @@ export default function TeacherLayout({
               <input
                 type="text"
                 placeholder="Search..."
+                defaultValue={useSearchParams().get("search") || ""}
+                onChange={(e) => {
+                  const params = new URLSearchParams(window.location.search);
+                  if (e.target.value) {
+                    params.set("search", e.target.value);
+                  } else {
+                    params.delete("search");
+                  }
+                  router.replace(`?${params.toString()}`);
+                }}
                 className="pl-9 pr-4 py-2 bg-muted border-none rounded-full text-sm focus:ring-2 focus:ring-brand-primary/20 focus:bg-card outline-none w-64 transition-colors"
               />
             </div>

@@ -16,10 +16,22 @@ export class PasswordService {
   static async requestReset(
     request: PasswordResetRequest,
   ): Promise<AuthResponse> {
-    // Find user by email (silent fail for security)
+    // Find user by email
     const user = await UserRepository.findByEmail(request.email);
+
     if (!user) {
-      // Return success even if user doesn't exist (security best practice)
+      // For security: Set a dummy cookie and return success
+      // This prevents email enumeration attacks
+      const dummyToken = TokenUtil.generatePasswordResetToken({
+        id: "00000000-0000-0000-0000-000000000000", // Dummy user ID
+        email: request.email,
+        role: "student" as any,
+      });
+
+      const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await CookieUtil.setResetStep1Cookie(dummyToken, expires);
+
+      // Return success message (same as when user exists)
       return {
         success: true,
         message: "If an account exists, a reset code has been sent.",
@@ -67,6 +79,89 @@ export class PasswordService {
     };
   }
 
+  static async resendResetCode(): Promise<AuthResponse> {
+    // Get reset_step1 cookie
+    const token = await CookieUtil.getResetStep1Cookie();
+    if (!token) {
+      return {
+        success: false,
+        message: "Reset session expired. Please request a new code.",
+      };
+    }
+
+    // Verify token
+    let payload;
+    try {
+      payload = TokenUtil.verifyVerificationToken(token);
+    } catch (error) {
+      await CookieUtil.clearResetStep1Cookie();
+      return {
+        success: false,
+        message: "Invalid or expired reset token.",
+      };
+    }
+
+    // Check if this is a dummy token (for non-existent user)
+    if (payload.id === "00000000-0000-0000-0000-000000000000") {
+      return {
+        success: false,
+        message: "Verification code not found. Please request a new one.",
+      };
+    }
+
+    // Check for existing code and rate limit
+    const existingCode =
+      await VerificationCodeRepository.findByUserIdAndPurpose(
+        payload.id,
+        "password_reset",
+      );
+
+    if (existingCode) {
+      const lastSent = new Date(existingCode.last_sent_at).getTime();
+      const now = Date.now();
+      const waitTime = authConfig.verificationCode.resendWaitTime * 1000;
+
+      if (now - lastSent < waitTime) {
+        const remainingSeconds = Math.ceil(
+          (waitTime - (now - lastSent)) / 1000,
+        );
+        return {
+          success: false,
+          message: `Please wait ${remainingSeconds} seconds before requesting a new code.`,
+        };
+      }
+
+      // Delete old code
+      await VerificationCodeRepository.deleteByUserIdAndPurpose(
+        payload.id,
+        "password_reset",
+      );
+    }
+
+    // Generate verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = HashUtil.hashVerificationCode(code);
+
+    // Store verification code
+    await VerificationCodeRepository.create({
+      user_id: payload.id,
+      code_hash: codeHash,
+      purpose: "password_reset",
+      expires_at: new Date(
+        Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
+      ).toISOString(),
+      last_sent_at: new Date().toISOString(),
+    });
+
+    // Send reset email
+    await EmailService.sendPasswordResetEmail(payload.email, code);
+
+    return {
+      success: true,
+      message: "Reset code sent.",
+    };
+  }
+
   static async verifyResetCode(
     request: PasswordResetVerifyRequest,
   ): Promise<AuthResponse> {
@@ -91,6 +186,13 @@ export class PasswordService {
       };
     }
 
+    // Check if this is a dummy token (for non-existent user)
+    if (payload.id === "00000000-0000-0000-0000-000000000000") {
+      return {
+        success: false,
+        message: "Verification code not found. Please request a new one.",
+      };
+    }
     // Get verification code
     const verificationCode =
       await VerificationCodeRepository.findByUserIdAndPurpose(

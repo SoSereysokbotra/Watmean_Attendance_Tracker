@@ -5,6 +5,7 @@ export const signupSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["student", "teacher", "admin"]).optional(),
+  token: z.string().optional(),
 });
 
 export const loginSchema = z.object({

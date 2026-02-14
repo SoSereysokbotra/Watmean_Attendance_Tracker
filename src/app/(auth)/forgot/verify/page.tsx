@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowLeft,
@@ -16,8 +17,11 @@ import { OTPInput } from "../../../../components/auth/OTPInput";
 import { ErrorAlert } from "../../../../components/ui/ErrorAlert";
 
 export default function VerifyResetCodePage() {
+  const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
 
   useEffect(() => {
@@ -27,6 +31,78 @@ export default function VerifyResetCodePage() {
     }
     return () => clearInterval(interval);
   }, [timer]);
+
+  // Auto-verify when all 6 digits are entered
+  useEffect(() => {
+    const isComplete = otp.every((digit) => digit !== "");
+    if (isComplete && !isVerifying) {
+      handleVerify();
+    }
+  }, [otp]);
+
+  const handleVerify = async () => {
+    setGlobalError("");
+    setIsVerifying(true);
+
+    try {
+      const code = otp.join("");
+      const response = await fetch("/api/auth/password/verify-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to reset password page
+        router.push("/forgot/reset");
+      } else {
+        setGlobalError(
+          data.message || "Verification failed. Please try again.",
+        );
+        setOtp(["", "", "", "", "", ""]);
+      }
+    } catch (error) {
+      console.error("Code verification error:", error);
+      setGlobalError("An error occurred. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (timer === 0 && !isResending) {
+      setIsResending(true);
+      setGlobalError("");
+
+      try {
+        // Resend password reset code
+        const response = await fetch("/api/auth/password/resend", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setTimer(30);
+        } else {
+          setGlobalError(data.message || "Failed to resend code.");
+        }
+      } catch (error) {
+        console.error("Resend error:", error);
+        // Reset timer even on error for better UX
+        setTimer(30);
+      } finally {
+        setIsResending(false);
+      }
+    }
+  };
 
   return (
     <AuthLayout
@@ -49,7 +125,7 @@ export default function VerifyResetCodePage() {
       >
         {/* Back Link */}
         <Link
-          href="/forgot-password"
+          href="/forgot"
           className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-brand-primary transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -65,10 +141,7 @@ export default function VerifyResetCodePage() {
             Password reset
           </h1>
           <p className="text-muted-foreground">
-            We sent a verification code to <br />
-            <span className="font-medium text-foreground">
-              jordan@university.edu
-            </span>
+            We sent a verification code to your email address
           </p>
         </div>
 
@@ -78,14 +151,15 @@ export default function VerifyResetCodePage() {
 
         {/* Form */}
         <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-          <OTPInput value={otp} onChange={setOtp} />
+          <OTPInput value={otp} onChange={setOtp} disabled={isVerifying} />
 
           <button
-            type="submit"
-            disabled={otp.some((digit) => digit === "")}
+            type="button"
+            onClick={handleVerify}
+            disabled={otp.some((digit) => digit === "") || isVerifying}
             className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Verify Code
+            {isVerifying ? "Verifying..." : "Verify Code"}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </form>
@@ -102,13 +176,11 @@ export default function VerifyResetCodePage() {
             </span>
           ) : (
             <button
-              onClick={() => {
-                setTimer(30);
-                setGlobalError("");
-              }}
-              className="text-sm font-semibold text-brand-primary hover:underline transition-all"
+              onClick={handleResend}
+              disabled={isResending}
+              className="text-sm font-semibold text-brand-primary hover:underline transition-all disabled:opacity-50"
             >
-              Click to resend
+              {isResending ? "Sending..." : "Click to resend"}
             </button>
           )}
         </div>

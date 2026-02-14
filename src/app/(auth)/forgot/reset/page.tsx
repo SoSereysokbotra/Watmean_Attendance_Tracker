@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Check, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { AuthLayout } from "../../../../components/auth/AuthLayout";
@@ -8,8 +9,10 @@ import { AuthInput } from "../../../../components/ui/AuthInput";
 import { ErrorAlert } from "../../../../components/ui/ErrorAlert";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string>("");
 
   // Validation Logic
@@ -20,12 +23,42 @@ export default function ResetPasswordPage() {
 
   const canSubmit = hasLength && hasNumber && hasSpecial && isMatch;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+
     setGlobalError("");
-    // Handle reset logic
-    // setGlobalError("Failed to reset password. Please try again.");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/password/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newPassword: password,
+          confirmPassword: confirmPassword,
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to login page on successful password reset
+        router.push("/login");
+      } else {
+        setGlobalError(
+          data.message || "Failed to reset password. Please try again.",
+        );
+      }
+    } catch (error) {
+      console.error("Password reset error:", error);
+      setGlobalError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,6 +107,7 @@ export default function ResetPasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              disabled={isLoading}
             />
           </div>
 
@@ -86,6 +120,7 @@ export default function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
+              disabled={isLoading}
             />
           </div>
 
@@ -107,10 +142,10 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isLoading}
             className="group w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Update Password
+            {isLoading ? "Updating..." : "Update Password"}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </form>

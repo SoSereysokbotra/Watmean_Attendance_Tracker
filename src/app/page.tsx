@@ -4,12 +4,11 @@ import Link from "next/link";
 import { ModeToggle } from "../components/mode-toggle";
 import { motion, Variants } from "framer-motion";
 import { TypingAnimation } from "../components/typing-animation";
-import {
-  MapPin,
-} from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useState } from "react";
+import { MobileNav } from "../components/MobileNav";
 
-// --- ANIMATION VARIANTS ---
+// --- ANIMATION VARIANTS (unchanged) ---
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -45,7 +44,7 @@ export default function WelcomePage() {
   const [headlinePart2Done, setHeadlinePart2Done] = useState(false);
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground selection:bg-primary/30">
-      {/* --- HEADER (Floating Pill Style) --- */}
+      {/* --- HEADER (unchanged) --- */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 px-4 pointer-events-none">
         <motion.header
           initial={{ y: -100, opacity: 0 }}
@@ -95,20 +94,25 @@ export default function WelcomePage() {
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-300"
+              className="hidden sm:block rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-300"
             >
               Get Started
             </Link>
-            <ModeToggle />
+            <div className="hidden sm:block">
+              <ModeToggle />
+            </div>
+
+            {/* Mobile Nav Trigger */}
+            <MobileNav />
           </div>
         </motion.header>
       </div>
 
       <main className="flex-1 pt-32">
         {/* --- HERO SECTION --- */}
-        <section className="relative overflow-hidden min-h-[50vh] flex items-center px-4 py-30">
+        <section className="relative overflow-hidden min-h-[50vh] flex items-center px-4 py-16 md:py-24">
           <div className="container mx-auto max-w-7xl">
-            <div className="flex flex-col items-center justify-center space-y-12 lg:space-y-80">
+            <div className="flex flex-col items-center justify-center space-y-8 md:space-y-12 lg:space-y-16">
               {/* 1. TEXT CONTAINER */}
               <motion.div
                 variants={containerVariants}
@@ -117,12 +121,11 @@ export default function WelcomePage() {
                 className="space-y-6 text-center max-w-3xl"
               >
                 {/* HEADLINE */}
-                {/* Note: min-h prevents layout shift while typing */}
                 <motion.div
                   variants={itemVariants}
                   className="min-h-[140px] sm:min-h-[160px]"
                 >
-                  <h1 className="text-5xl lg:text-7xl font-bold text-muted-brand-dark leading-[1.1]">
+                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-muted-brand-dark leading-[1.1]">
                     {/* Line 1 */}
                     <TypingAnimation
                       text="Campus Attendance,"
@@ -143,7 +146,7 @@ export default function WelcomePage() {
                   </h1>
                 </motion.div>
 
-                {/* PARAGRAPH (Wait for Line 2) */}
+                {/* PARAGRAPH */}
                 <motion.div variants={itemVariants}>
                   <p className="text-lg text-muted-foreground leading-relaxed mx-auto max-w-2xl min-h-[84px]">
                     {headlinePart2Done && (
@@ -158,7 +161,7 @@ export default function WelcomePage() {
                 </motion.div>
               </motion.div>
 
-              {/* 2. VIDEO CONTAINER (Standard) */}
+              {/* 2. VIDEO CONTAINER */}
               <motion.div
                 variants={videoVariants}
                 initial="hidden"
@@ -210,7 +213,7 @@ export default function WelcomePage() {
               {/* 1. Faculty Analytics */}
               <motion.div
                 variants={itemVariants}
-                className="group rounded-3xl bg-card p-10 shadow-lg border border-border hover:border-border/80 transition-all md:col-span-4"
+                className="group rounded-3xl bg-card p-6 md:p-10 shadow-lg border border-border hover:border-border/80 transition-all md:col-span-4"
               >
                 <h3 className="text-2xl font-bold text-card-foreground mb-4">
                   Faculty Analytics
@@ -221,10 +224,10 @@ export default function WelcomePage() {
                 </p>
               </motion.div>
 
-              {/* 2. Device DNA Fingerprinting (Dark Highlighted Card) */}
+              {/* 2. Device DNA Fingerprinting */}
               <motion.div
                 variants={itemVariants}
-                className="group rounded-3xl bg-brand-dark p-8 shadow-xl border border-border relative overflow-hidden md:col-span-6"
+                className="group rounded-3xl bg-brand-dark p-6 md:p-8 shadow-xl border border-border relative overflow-hidden md:col-span-6"
               >
                 <div className="relative z-10">
                   <h3 className="text-2xl font-bold text-brand-light mb-4">
@@ -236,7 +239,7 @@ export default function WelcomePage() {
                     check-in.
                   </p>
                 </div>
-                {/* Subtle background glow for the dark card */}
+                {/* Subtle background glow (unchanged) */}
                 <motion.div
                   animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
                   transition={{ duration: 5, repeat: Infinity }}
@@ -244,10 +247,10 @@ export default function WelcomePage() {
                 />
               </motion.div>
 
-              {/* 3. Precision Geofencing V2.0 (With Graphic) */}
+              {/* 3. Precision Geofencing V2.0 */}
               <motion.div
                 variants={itemVariants}
-                className="group relative overflow-hidden rounded-3xl bg-card p-10 shadow-lg border border-border hover:border-gray-600 transition-all md:col-span-6"
+                className="group relative overflow-hidden rounded-3xl bg-card p-6 md:p-10 shadow-lg border border-border hover:border-gray-600 transition-all md:col-span-6"
               >
                 <div className="relative z-10 max-w-md">
                   <h3 className="text-2xl font-bold text-card-foreground mb-4">
@@ -260,8 +263,8 @@ export default function WelcomePage() {
                     not just near the building.
                   </p>
                 </div>
-                {/* Large Background Graphic */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/3 opacity-10 pointer-events-none">
+                {/* Large Background Graphic – hidden on mobile to avoid overlap */}
+                <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/3 opacity-10 pointer-events-none">
                   <div className="relative">
                     <div className="absolute inset-0 bg-primary blur-3xl opacity-20"></div>
                     <MapPin className="h-64 w-64 text-brand-primary" />
@@ -272,7 +275,7 @@ export default function WelcomePage() {
               {/* 4. LMS Integration */}
               <motion.div
                 variants={itemVariants}
-                className=" p-8 hover:border-border transition-all flex flex-col justify-center md:col-span-4"
+                className="p-6 md:p-8 hover:border-border transition-all flex flex-col justify-center md:col-span-4"
               >
                 <div>
                   <h3 className="text-2xl font-bold text-foreground mb-4">
@@ -399,12 +402,14 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          <div className="font-medium text-foreground mb-6 text-[250px] overflow-hidden">
+          {/* Large brand name – now responsive */}
+          <div className="font-medium text-foreground mb-6 overflow-hidden">
             <motion.h1
               initial={{ x: -100, opacity: 0 }}
               whileInView={{ x: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1 }}
+              className="text-7xl sm:text-8xl md:text-9xl lg:text-[250px] leading-none"
             >
               Watmean
             </motion.h1>

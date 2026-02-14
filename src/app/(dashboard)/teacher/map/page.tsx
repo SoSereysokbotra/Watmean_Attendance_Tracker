@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronRight,
   Loader2,
+  Navigation,
 } from "lucide-react";
 
 // ---------------------------------------------------------
@@ -32,70 +33,126 @@ const TeacherMap = dynamic(() => import("@/components/teacher/TeacherMap"), {
 });
 
 // ---------------------------------------------------------
-// 2. Mock Data (With Real Coordinates)
+// 2. Data Fetching
 // ---------------------------------------------------------
-const activeZones = [
-  {
-    id: 1,
-    name: "Physics 101",
-    room: "Room 204",
-    radius: 60,
-    current: 28,
-    total: 30,
-    status: "active",
-    alerts: 0,
-    lat: 11.5564,
-    lng: 104.9282,
-    color: "bg-emerald-500",
-  },
-  {
-    id: 2,
-    name: "CompSci 300",
-    room: "Lab 3",
-    radius: 35,
-    current: 40,
-    total: 42,
-    status: "active",
-    alerts: 2,
-    lat: 11.555,
-    lng: 104.925,
-    color: "bg-indigo-500",
-  },
-  {
-    id: 3,
-    name: "History 101",
-    room: "Main Hall",
-    radius: 100,
-    current: 0,
-    total: 50,
-    status: "pending",
-    alerts: 0,
-    lat: 11.558,
-    lng: 104.929,
-    color: "bg-gray-400",
-  },
-];
+
+interface Zone {
+  id: string | number;
+  name: string;
+  room: string;
+  radius: number;
+  current: number;
+  total: number;
+  status: string;
+  alerts: number;
+  lat: number;
+  lng: number;
+  color: string;
+}
 
 export default function TeacherLiveMap() {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const selectedZone = activeZones.find((z) => z.id === selectedId);
+  const [selectedId, setSelectedId] = useState<string | number | null>(null);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null,
+  );
+
+  const handleLocateMe = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          setSelectedId(null); // Deselect zone to focus on user
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Could not get your location. Please check permissions.");
+        },
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
+
+  // Filter zones based on search query and active filter
+  const filteredZones = zones.filter((zone) => {
+    const matchesSearch =
+      zone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      zone.room.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesActive = !showActiveOnly || zone.status === "active";
+    return matchesSearch && matchesActive;
+  });
+
+  const selectedZone = filteredZones.find((z) => z.id === selectedId);
+
+  React.useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const res = await fetch("/api/teacher/classes");
+        if (!res.ok) throw new Error("Failed to fetch classes");
+        const data = await res.json();
+
+        // Transform and filter classes with location
+        const mappedZones: Zone[] = data.classes
+          .filter((cls: any) => cls.lat && cls.lng)
+          .map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            room: cls.room || "Unknown Room",
+            radius: Number(cls.radius) || 50,
+            current: cls.activeStudents || 0,
+            total: cls.totalStudents || 0,
+            status: cls.status || "inactive",
+            alerts: 0, // API doesn't provide alerts count yet
+            lat: parseFloat(cls.lat),
+            lng: parseFloat(cls.lng),
+            color: cls.status === "active" ? "bg-emerald-500" : "bg-indigo-500",
+          }));
+
+        setZones(mappedZones);
+      } catch (error) {
+        console.error("Error fetching map data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchClasses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-[calc(100dvh-8rem)] bg-card rounded-2xl border border-border shadow-sm flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-primary" size={32} />
+        <span className="ml-2 text-sm text-muted-foreground">
+          Loading Class Locations...
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex group font-sans relative">
-      {/* ---------------------------------------------------------
-          Left: Map Area
-      --------------------------------------------------------- */}
+    <div className="h-[calc(100dvh-7rem)] md:h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col md:flex-row group font-sans relative">
       <div className="flex-1 relative z-0">
         {/* Reusable Component */}
         <TeacherMap
-          zones={activeZones}
+          zones={filteredZones}
           selectedId={selectedId}
-          onSelectZone={setSelectedId}
+          onSelectZone={(id) => {
+            setSelectedId(id);
+            setUserLocation(null);
+          }}
+          focusLocation={userLocation}
         />
 
-        {/* Floating Overlay Header */}
-        <div className="absolute top-0 left-0 right-0 p-0.5 z-[1000] pointer-events-none">
-          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3 flex flex-col sm:flex-row justify-between items-center gap-3 m-2">
+        {/* Floating Overlay Container */}
+        <div className="absolute top-0 left-0 right-0 z-[1000] p-2 pointer-events-none flex flex-col gap-2">
+          {/* Header */}
+          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 fill-mode-both">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="h-10 w-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary">
                 <Target size={20} />
@@ -105,8 +162,8 @@ export default function TeacherLiveMap() {
                   Campus Monitor
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {activeZones.filter((z) => z.status === "active").length}{" "}
-                  Active Sessions
+                  {filteredZones.filter((z) => z.status === "active").length}{" "}
+                  Active Sessions • {filteredZones.length} Total
                 </p>
               </div>
             </div>
@@ -119,30 +176,133 @@ export default function TeacherLiveMap() {
                 />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full sm:w-48 pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                   placeholder="Find class..."
                 />
               </div>
             </div>
           </div>
+
+          {/* Quick Navigation Buttons */}
+          <div className="pointer-events-auto flex gap-2 justify-start flex-wrap">
+            <button
+              onClick={() => {
+                setShowActiveOnly(false);
+                setSearchQuery("");
+                setSelectedId(null);
+              }}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300 ${
+                !showActiveOnly && searchQuery === ""
+                  ? "bg-brand-primary text-white border border-brand-primary"
+                  : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+              }`}
+            >
+              <MapPin size={14} />
+              Show All Locations
+            </button>
+            <button
+              onClick={() => {
+                setShowActiveOnly(!showActiveOnly);
+                setSearchQuery("");
+                setSelectedId(null);
+              }}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300 ${
+                showActiveOnly
+                  ? "bg-emerald-500 text-white border border-emerald-500"
+                  : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+              }`}
+              style={{ animationDelay: "100ms" }}
+            >
+              <CheckCircle2 size={14} />
+              Active Sessions Only
+            </button>
+            {filteredZones.length > 0 && (
+              <button
+                onClick={() => {
+                  // Reset to first location or deselect
+                  if (filteredZones.length > 0) {
+                    setSelectedId(filteredZones[0].id);
+                    setUserLocation(null);
+                  }
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300"
+                style={{ animationDelay: "200ms" }}
+              >
+                <Target size={14} />
+                Center on Campus
+              </button>
+            )}
+            <button
+              onClick={handleLocateMe}
+              className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-brand-primary text-brand-light border border-brand-primary/20 hover:bg-brand-primary/50 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300"
+              style={{ animationDelay: "300ms" }}
+            >
+              <Navigation size={14} />
+              My Location
+            </button>
+          </div>
         </div>
+
+        {/* No Results Overlay */}
+        {filteredZones.length === 0 && zones.length > 0 && (
+          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-500">
+            <div className="bg-card border border-border rounded-2xl shadow-lg p-8 text-center max-w-md mx-4 animate-in scale-in-95 slide-in-from-bottom-6 duration-500">
+              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 mx-auto text-muted-foreground">
+                <Search size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                No Classes Found
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {searchQuery
+                  ? `No classes match "${searchQuery}"`
+                  : "No active sessions found"}
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowActiveOnly(false);
+                }}
+                className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-bold hover:bg-brand-primary/90 transition-all"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------------------------------------------------------
-          Right: Sidebar Details
+          Right: Sidebar Details (Mobile Bottom Sheet / Desktop Sidebar)
       --------------------------------------------------------- */}
-      <div className="w-[320px] lg:w-[360px] bg-card border-l border-border hidden md:flex flex-col z-20 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t border-border shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:static md:w-[320px] lg:w-[360px] md:border-l md:border-t-0 md:shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] md:flex md:flex-col md:z-20 md:transform-none ${
+          selectedZone ? "translate-y-0" : "translate-y-full md:translate-y-0"
+        }`}
+        style={{ maxHeight: "60vh" }} // Limit height on mobile
+      >
         {selectedZone ? (
           <>
             {/* Zone Header */}
-            <div className="p-5 border-b border-border">
+            <div className="p-4 md:p-5 border-b border-border">
               <div className="flex justify-between items-start mb-1">
                 <h2 className="text-lg font-bold text-foreground">
                   {selectedZone.name}
                 </h2>
-                <button className="text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors">
-                  <MoreHorizontal size={18} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button className="text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors">
+                    <MoreHorizontal size={18} />
+                  </button>
+                  {/* Mobile Close Button */}
+                  <button
+                    onClick={() => setSelectedId(null)}
+                    className="md:hidden text-muted-foreground hover:bg-muted p-1 rounded-md transition-colors"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                 <MapPin size={14} /> {selectedZone.room}
@@ -215,22 +375,9 @@ export default function TeacherLiveMap() {
                 </div>
               </div>
             </div>
-
-            {/* Footer */}
-            <div className="p-4 bg-muted/30 border-t border-border">
-              <button className="w-full bg-brand-primary border-border hover:bg-muted text-brand-light p-3 rounded-xl text-sm font-bold shadow-sm transition-all flex justify-between items-center group">
-                <span className="flex items-center gap-2">
-                  <Settings size={16} /> Settings
-                </span>
-                <ChevronRight
-                  size={16}
-                  className="text-light group-hover:translate-x-1 transition-transform"
-                />
-              </button>
-            </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-muted/10">
+          <div className="hidden md:flex flex-col items-center justify-center h-full p-8 text-center bg-muted/10">
             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 text-muted-foreground animate-pulse">
               <MapPin size={32} />
             </div>

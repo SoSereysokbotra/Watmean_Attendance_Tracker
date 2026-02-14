@@ -143,29 +143,29 @@ export function StudentManagement() {
 
   return (
     <div className="space-y-4">
-      {/* Header with Bulk Actions */}
+      {/* Header with Bulk Actions - already responsive */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               size={16}
             />
             <Input
               placeholder="Search students..."
-              className="pl-10 w-64"
+              className="pl-10 w-full sm:w-64"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="whitespace-nowrap">
             <Filter size={16} className="mr-2" />
             Filter
           </Button>
         </div>
 
         {selectedStudents.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <span className="text-sm text-muted-foreground">
               {selectedStudents.length} selected
             </span>
@@ -197,7 +197,7 @@ export function StudentManagement() {
         )}
       </div>
 
-      {/* Status Filter Tabs */}
+      {/* Status Filter Tabs - already has overflow-x-auto */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {["all", "present", "absent", "late", "at-risk"].map((status) => (
           <button
@@ -221,10 +221,10 @@ export function StudentManagement() {
         ))}
       </div>
 
-      {/* Students Table */}
+      {/* Students Table - already has overflow-x-auto */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-muted/50">
               <tr className="text-left text-sm text-muted-foreground">
                 <th className="p-4 w-12">
@@ -259,7 +259,7 @@ export function StudentManagement() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex-shrink-0">
                         <img
                           src={
                             student.avatar ||
@@ -269,13 +269,13 @@ export function StudentManagement() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">
                           {student.name}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Mail size={12} />
-                          {student.email}
+                          <span className="truncate">{student.email}</span>
                         </div>
                       </div>
                     </div>
@@ -290,7 +290,7 @@ export function StudentManagement() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="w-16 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
                             student.attendanceRate >= 90
@@ -302,19 +302,19 @@ export function StudentManagement() {
                           style={{ width: `${student.attendanceRate}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium whitespace-nowrap">
                         {student.attendanceRate}%
                       </span>
                     </div>
                   </td>
                   <td className="p-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 whitespace-nowrap">
                       <Clock size={14} />
                       {student.lastSeen}
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs rounded-full font-medium">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs rounded-full font-medium whitespace-nowrap">
                       {student.class}
                     </span>
                   </td>

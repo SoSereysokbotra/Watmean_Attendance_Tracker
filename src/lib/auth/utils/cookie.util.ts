@@ -36,6 +36,19 @@ export class CookieUtil {
     await this.setCookie(authConfig.cookies.resetStep2, token, expires);
   }
 
+  static async setAccessTokenCookie(token: string) {
+    // Parse "7d" to milliseconds
+    const expiresIn = 7 * 24 * 60 * 60 * 1000;
+    const expires = new Date(Date.now() + expiresIn);
+    await this.setCookie(authConfig.cookies.accessToken, token, expires);
+  }
+
+  static async setRefreshTokenCookie(token: string) {
+    // Parse "30d" to milliseconds
+    const expiresIn = 30 * 24 * 60 * 60 * 1000;
+    const expires = new Date(Date.now() + expiresIn);
+    await this.setCookie(authConfig.cookies.refreshToken, token, expires);
+  }
   static async getVerificationSessionCookie(): Promise<string | undefined> {
     return await this.getCookie(authConfig.cookies.verificationSession);
   }
@@ -48,6 +61,13 @@ export class CookieUtil {
     return await this.getCookie(authConfig.cookies.resetStep2);
   }
 
+  static async getAccessTokenCookie(): Promise<string | undefined> {
+    return await this.getCookie(authConfig.cookies.accessToken);
+  }
+
+  static async getRefreshTokenCookie(): Promise<string | undefined> {
+    return await this.getCookie(authConfig.cookies.refreshToken);
+  }
   static async clearVerificationSessionCookie() {
     await this.deleteCookie(authConfig.cookies.verificationSession);
   }
@@ -64,5 +84,7 @@ export class CookieUtil {
     await this.clearVerificationSessionCookie();
     await this.clearResetStep1Cookie();
     await this.clearResetStep2Cookie();
+    await this.deleteCookie(authConfig.cookies.accessToken);
+    await this.deleteCookie(authConfig.cookies.refreshToken);
   }
 }

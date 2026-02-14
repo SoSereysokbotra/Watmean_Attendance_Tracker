@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MapPin,
@@ -101,25 +101,96 @@ export default function TeacherSidebar({
   isOpen,
   toggleSidebar,
 }: TeacherSidebarProps) {
-  const teacherName = "Prof. Davis";
-  const teacherInitials = "PD";
+  const router = useRouter();
+  const [user, setUser] = React.useState<{
+    id: string;
+    name: string;
+    teacherId?: string;
+    initials: string;
+    department?: string;
+    profileImage?: string;
+  } | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/teacher/settings");
+        if (response.ok) {
+          const data = await response.json();
+          const fullName = data.profile.fullName || "Teacher";
+          const initials = fullName
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+
+          setUser({
+            id: data.profile.id,
+            name: fullName,
+            teacherId: data.profile.teacherId,
+            initials: initials,
+            department: "Teacher",
+            profileImage: data.profile.profileImage,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data for sidebar", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        router.push("/login");
+      } else {
+        console.error("Logout failed");
+        setIsLoggingOut(false);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
+    }
+  };
+
+  const teacherName = user?.name || "Loading...";
+  const teacherInitials = user?.initials || "...";
+  const department = user?.department || "Teacher";
+  const profileImage = user?.profileImage;
 
   return (
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen lg:h-full border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
     >
-      {/* Profile Area */}
       <div
         className={`flex items-center ${
           isOpen ? "px-6 py-4 gap-3" : "justify-center py-4"
         } border-b border-border sticky top-0 bg-brand-dark/80 dark:bg-background/80 backdrop-blur-md z-10`}
       >
         <div className="relative shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-            {teacherInitials}
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={teacherName}
+              className="w-10 h-10 rounded-full object-cover border-2 border-brand-primary"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {teacherInitials}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
         </div>
 
@@ -129,13 +200,12 @@ export default function TeacherSidebar({
               {teacherName}
             </h3>
             <p className="text-xs text-muted-foreground truncate">
-              Physics Department
+              {department}
             </p>
           </div>
         )}
       </div>
 
-      {/* Navigation */}
       <div className="p-4 flex-1">
         <SidebarSection title="Menu" isOpen={isOpen}>
           <SidebarItem
@@ -187,7 +257,6 @@ export default function TeacherSidebar({
         </SidebarSection>
       </div>
 
-      {/* Collapse Sidebar Button */}
       <div className="p-4 border-t border-border/15">
         <button
           onClick={toggleSidebar}
@@ -199,15 +268,20 @@ export default function TeacherSidebar({
         </button>
       </div>
 
-      {/* Footer with Sign Out */}
       <div className="p-4 border-t border-border/15">
         <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
           className={`flex items-center ${
             isOpen ? "gap-2 justify-start" : "justify-center"
-          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full`}
+          } text-xs font-medium text-muted-foreground hover:text-brand-primary transition-colors w-full ${
+            isLoggingOut ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           <LogOut size={isOpen ? 14 : 18} />
-          {isOpen && <span>Sign Out</span>}
+          {isOpen && (
+            <span>{isLoggingOut ? "Signing Out..." : "Sign Out"}</span>
+          )}
         </button>
       </div>
     </aside>

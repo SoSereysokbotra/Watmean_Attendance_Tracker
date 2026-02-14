@@ -1,5 +1,8 @@
-import { UserRepository } from "../repositories/user.repository";
-import { VerificationCodeRepository } from "../repositories/verificationCode.repository";
+import {
+  UserRepository,
+  VerificationCodeRepository,
+  RefreshTokenRepository,
+} from "@/lib/db/repositories/example.repository";
 import { HashUtil } from "../utils/hash.util";
 import { TokenUtil } from "../utils/token.util";
 import { CookieUtil } from "../utils/cookie.util";
@@ -12,15 +15,63 @@ import {
   AuthResponse,
 } from "../types";
 import { v4 as uuidv4 } from "uuid";
-import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
 
 export class AuthService {
   static async signup(request: SignupRequest): Promise<AuthResponse> {
     // Check if user already exists
     const existingUser = await UserRepository.findByEmail(request.email);
 
+    // Handle Invitation Token
+    let invitation = null as Awaited<
+      ReturnType<
+        (typeof import("@/lib/db/repositories/invitations.repository"))["InvitationRepository"]["findByToken"]
+      >
+    > | null;
+    if (request.token) {
+      const { InvitationRepository } =
+        await import("@/lib/db/repositories/invitations.repository");
+      invitation = await InvitationRepository.findByToken(request.token);
+
+      if (!invitation) {
+        return {
+          success: false,
+          message: "Invalid invitation token.",
+        };
+      }
+
+      if (invitation.status !== "pending") {
+        return {
+          success: false,
+          message: "Invitation token has already been used or expired.",
+        };
+      }
+
+      if (new Date(invitation.expiresAt) < new Date()) {
+        await InvitationRepository.markAsExpired(invitation.id);
+        return {
+          success: false,
+          message: "Invitation token has expired.",
+        };
+      }
+
+      // Ensure the registration email matches the invitation email
+      if (
+        invitation.email.trim().toLowerCase() !==
+        request.email.trim().toLowerCase()
+      ) {
+        return {
+          success: false,
+          message:
+            "The email address does not match the invitation. Please use the email that received the invite.",
+        };
+      }
+
+      // Enforce role from invitation
+      request.role = invitation.role as any;
+    }
+
     if (existingUser) {
-      if (existingUser.is_verified) {
+      if (existingUser.isVerified) {
         return {
           success: false,
           message: "Account already exists. Please login.",
@@ -53,24 +104,39 @@ export class AuthService {
 
     // Create or update user
     let user;
-    if (existingUser && !existingUser.is_verified) {
+    if (existingUser && !existingUser.isVerified) {
       // Update existing user with new password
       user = await UserRepository.update(existingUser.id, {
-        full_name: request.fullName,
+        fullName: request.fullName,
         password: passwordHash,
         role: request.role || "student",
-        updated_at: new Date().toISOString(),
+        updatedAt: new Date(),
       });
     } else {
+      // Generate unique ID based on role
+      const role = request.role || "student";
+      const year = new Date().getFullYear();
+      const random = Math.floor(1000 + Math.random() * 9000); // 4 digit random
+      const uniqueId = `${role === "student" ? "STU" : "TEA"}-${year}-${random}`;
+
       // Create new user
       user = await UserRepository.create({
-        full_name: request.fullName,
+        fullName: request.fullName,
         email: request.email,
         password: passwordHash,
-        role: request.role || "student",
-        is_verified: false,
+        role: role,
+        studentId: role === "student" ? uniqueId : null,
+        teacherId: role === "teacher" ? uniqueId : null,
+        isVerified: false,
         status: "pending",
       });
+    }
+
+    if (!user) {
+      return {
+        success: false,
+        message: "Failed to create or update user.",
+      };
     }
 
     // Generate verification token
@@ -90,17 +156,24 @@ export class AuthService {
 
     // Store verification code
     await VerificationCodeRepository.create({
-      user_id: user.id,
-      code_hash: codeHash,
+      userId: user.id,
+      codeHash: codeHash,
       purpose: "email_verification",
-      expires_at: new Date(
+      expiresAt: new Date(
         Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
-      ).toISOString(),
-      last_sent_at: new Date().toISOString(),
+      ),
+      lastSentAt: new Date(),
     });
 
     // Send verification email
     await EmailService.sendVerificationEmail(user.email, code);
+
+    // Mark invitation as accepted if used
+    if (invitation) {
+      const { InvitationRepository } =
+        await import("@/lib/db/repositories/invitations.repository");
+      await InvitationRepository.markAsAccepted(invitation.id);
+    }
 
     return {
       success: true,
@@ -145,7 +218,7 @@ export class AuthService {
 
     // Get verification code
     const verificationCode =
-      await VerificationCodeRepository.findByUserIdAndPurpose(
+      await VerificationCodeRepository.findActiveByUserIdAndPurpose(
         user.id,
         "email_verification",
       );
@@ -157,7 +230,7 @@ export class AuthService {
     }
 
     // Check expiry
-    if (new Date(verificationCode.expires_at) < new Date()) {
+    if (new Date(verificationCode.expiresAt) < new Date()) {
       await VerificationCodeRepository.deleteByUserIdAndPurpose(
         user.id,
         "email_verification",
@@ -170,7 +243,7 @@ export class AuthService {
 
     // Verify code
     const codeHash = HashUtil.hashVerificationCode(request.code);
-    if (codeHash !== verificationCode.code_hash) {
+    if (codeHash !== verificationCode.codeHash) {
       return {
         success: false,
         message: "Invalid verification code.",
@@ -179,9 +252,9 @@ export class AuthService {
 
     // Update user
     await UserRepository.update(user.id, {
-      is_verified: true,
+      isVerified: true,
       status: "active",
-      updated_at: new Date().toISOString(),
+      updatedAt: new Date(),
     });
 
     // Delete verification code
@@ -198,6 +271,99 @@ export class AuthService {
     };
   }
 
+  static async resendVerificationCode(): Promise<AuthResponse> {
+    // Get verification session cookie
+    const token = await CookieUtil.getVerificationSessionCookie();
+    if (!token) {
+      return {
+        success: false,
+        message: "Verification session expired. Please login again.",
+      };
+    }
+
+    // Verify token
+    let payload;
+    try {
+      payload = TokenUtil.verifyVerificationToken(token);
+    } catch (error) {
+      await CookieUtil.clearVerificationSessionCookie();
+      return {
+        success: false,
+        message: "Invalid or expired verification token.",
+      };
+    }
+
+    // Get user
+    const user = await UserRepository.findById(payload.id);
+    if (!user) {
+      return {
+        success: false,
+        message: "User not found.",
+      };
+    }
+
+    if (user.isVerified) {
+      return {
+        success: false,
+        message: "User is already verified.",
+      };
+    }
+
+    // Check for existing code and rate limit
+    const existingCode =
+      await VerificationCodeRepository.findActiveByUserIdAndPurpose(
+        user.id,
+        "email_verification",
+      );
+
+    if (existingCode) {
+      const lastSent = existingCode.lastSentAt
+        ? new Date(existingCode.lastSentAt).getTime()
+        : 0;
+      const now = Date.now();
+      const waitTime = authConfig.verificationCode.resendWaitTime * 1000;
+
+      if (now - lastSent < waitTime) {
+        const remainingSeconds = Math.ceil(
+          (waitTime - (now - lastSent)) / 1000,
+        );
+        return {
+          success: false,
+          message: `Please wait ${remainingSeconds} seconds before requesting a new code.`,
+        };
+      }
+
+      // Delete old code
+      await VerificationCodeRepository.deleteByUserIdAndPurpose(
+        user.id,
+        "email_verification",
+      );
+    }
+
+    // Generate new verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = HashUtil.hashVerificationCode(code);
+
+    // Store verification code
+    await VerificationCodeRepository.create({
+      userId: user.id,
+      codeHash: codeHash,
+      purpose: "email_verification",
+      expiresAt: new Date(
+        Date.now() + authConfig.verificationCode.expiresInMinutes * 60 * 1000,
+      ),
+      lastSentAt: new Date(),
+    });
+
+    // Send verification email
+    await EmailService.sendVerificationEmail(user.email, code);
+
+    return {
+      success: true,
+      message: "Verification code sent.",
+    };
+  }
+
   static async login(request: LoginRequest): Promise<AuthResponse> {
     // Find user
     const user = await UserRepository.findByEmail(request.email);
@@ -208,8 +374,22 @@ export class AuthService {
       };
     }
 
+    if (user.status === "blocked") {
+      return {
+        success: false,
+        message: "Account is blocked. Please contact support.",
+      };
+    }
+
+    if (user.status === "deleted") {
+      return {
+        success: false,
+        message: "Account was deleted. Please contact support to restore.",
+      };
+    }
+
     // Check if user is verified
-    if (!user.is_verified) {
+    if (!user.isVerified) {
       return {
         success: false,
         message: "Please verify your email before logging in.",
@@ -254,13 +434,13 @@ export class AuthService {
     // Store refresh token
     const familyId = uuidv4();
     await RefreshTokenRepository.create({
-      user_id: user.id,
-      token_hash: refreshTokenHash,
-      family_id: familyId,
-      device_info: "Web", // TODO: Extract from User-Agent
-      user_agent: "Unknown", // TODO: Extract from request
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      revoked_at: null,
+      userId: user.id,
+      tokenHash: refreshTokenHash,
+      familyId: familyId,
+      deviceInfo: "Web", // TODO: Extract from User-Agent
+      userAgent: "Unknown", // TODO: Extract from request
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      revokedAt: null,
     });
 
     return {
@@ -271,7 +451,7 @@ export class AuthService {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.full_name,
+          fullName: user.fullName,
           role: user.role as any,
         },
       },

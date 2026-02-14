@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Calendar as CalendarIcon,
   CheckCircle2,
@@ -27,34 +27,40 @@ export default function StudentAttendanceView() {
   const [activeTab, setActiveTab] = useState("all");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const attendanceData = [
-    {
-      id: 1,
-      course: "Physics 101",
-      prof: "Prof. Davis",
-      room: "Lecture Hall A",
-      date: "Nov 14, 2023",
-      time: "09:14 AM",
-      status: "Present",
-      signal: "High",
-      gps: "GPS Verified",
-      icon: BookOpen,
-      colorClass: "brand-primary",
-    },
-    {
-      id: 3,
-      course: "Calculus II",
-      prof: "Prof. Evans",
-      room: "Room 304",
-      date: "Nov 12, 2023",
-      time: "No Check-in",
-      status: "Absent",
-      signal: "--",
-      gps: "No Signal",
-      icon: BookOpen,
-      colorClass: "brand-primary",
-    }
-  ];
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const response = await fetch("/api/student/attendance");
+        if (response.ok) {
+          const data = await response.json();
+          const formattedData = data.history.map((record: any) => ({
+            id: record.id,
+            course: `${record.className} (${record.classCode})`,
+            prof: record.teacherName, // Assuming join provides this
+            room: record.room,
+            date: new Date(record.date).toLocaleDateString(),
+            time: record.checkInTime || "--",
+            status:
+              record.status.charAt(0).toUpperCase() + record.status.slice(1),
+            signal: "High", // Mock signal mostly
+            gps: "GPS Verified",
+            icon: BookOpen,
+            colorClass: "brand-primary",
+          }));
+          setAttendanceData(formattedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch attendance:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, []);
 
   const filteredData = attendanceData.filter((item) => {
     if (activeTab === "all") return true;
@@ -78,23 +84,43 @@ export default function StudentAttendanceView() {
     }
   };
 
+  // Calculate actual stats from data
+  const totalClasses = attendanceData.length;
+  const presentCount = attendanceData.filter(
+    (d) => d.status === "Present",
+  ).length;
+  const lateCount = attendanceData.filter((d) => d.status === "Late").length;
+  const absentCount = attendanceData.filter(
+    (d) => d.status === "Absent",
+  ).length;
+  const excusedCount = attendanceData.filter(
+    (d) => d.status === "Excused",
+  ).length;
+  const attendanceRate =
+    totalClasses > 0
+      ? Math.round(((presentCount + lateCount) / totalClasses) * 100)
+      : 100;
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-background min-h-screen">
+    <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 animate-in fade-in duration-700 bg-background min-h-screen">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <div>
           <h2 className="text-3xl font-bold text-foreground tracking-tight">
             My Attendance
           </h2>
           <p className="text-muted-foreground mt-2 font-medium">
-            Welcome back, Alex. You are currently on track for the semester.
+            Track your semester attendance history and performance.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {/* WRAP THE BUTTON IN POPOVER */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all">
+              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all hover:scale-105 active:scale-95 duration-300">
                 <CalendarIcon size={16} />
                 {/* Optional: Show selected date or just "History" */}
                 {date ? format(date, "PPP") : "History"}
@@ -113,37 +139,40 @@ export default function StudentAttendanceView() {
           </Popover>
 
           {/* DOWNLOAD BUTTON (Unchanged) */}
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95">
+          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95 hover:scale-105 duration-300">
             <Download size={16} /> Download Log
           </button>
         </div>
       </div>
 
       {/* Summary Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-8 relative">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-8 relative animate-in fade-in duration-500 fill-mode-both"
+        style={{ animationDelay: "300ms" }}
+      >
         <div className="absolute top-0 left-1/4 w-64 h-64 bg-brand-primary/10 blur-[100px] -z-10 rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-rose-100/20 dark:bg-rose-900/10 blur-[100px] -z-10 rounded-full" />
 
         {[
           {
             label: "Attendance Rate",
-            val: "94%",
+            val: `${attendanceRate}%`,
             sub: "Semester Goal: 85%",
-            trend: "Good",
+            trend: attendanceRate >= 85 ? "Good" : "Warning",
             color: "text-emerald-600 dark:text-emerald-400",
             accent: "bg-emerald-500",
           },
           {
             label: "Classes Missed",
-            val: "3",
+            val: absentCount.toString(),
             sub: "Total Sessions",
-            trend: "Warning",
+            trend: absentCount > 3 ? "Warning" : "Good",
             color: "text-rose-600 dark:text-rose-400",
             accent: "bg-rose-500",
           },
           {
             label: "Late Arrivals",
-            val: "2",
+            val: lateCount.toString(),
             sub: "Avg. 5 mins",
             trend: "Stable",
             color: "text-amber-600 dark:text-amber-400",
@@ -151,7 +180,7 @@ export default function StudentAttendanceView() {
           },
           {
             label: "Excused",
-            val: "1",
+            val: excusedCount.toString(),
             sub: "Medical Leave",
             trend: "Approved",
             color: "text-blue-600 dark:text-blue-400",
@@ -160,7 +189,10 @@ export default function StudentAttendanceView() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="relative flex flex-col group cursor-default transition-all duration-300"
+            className="relative flex flex-col group cursor-default transition-all duration-300 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both hover:scale-105 origin-bottom"
+            style={{
+              animationDelay: `${400 + Object.keys({ label: "Attendance Rate", val: `${attendanceRate}%`, sub: "Semester Goal: 85%", trend: attendanceRate >= 85 ? "Good" : "Warning", color: "text-emerald-600 dark:text-emerald-400", accent: "bg-emerald-500" }).indexOf(stat.label) * 100}ms`,
+            }}
           >
             <div
               className={`h-1 w-12 rounded-full mb-6 transition-all duration-500 group-hover:w-20 ${stat.accent}`}
@@ -201,8 +233,11 @@ export default function StudentAttendanceView() {
       </div>
 
       {/* Detailed Table Section */}
-      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card gap-4">
+      <div
+        className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+        style={{ animationDelay: "500ms" }}
+      >
+        <div className="px-4 sm:px-8 py-6 border-b border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card gap-4">
           <div>
             <h3 className="font-bold text-foreground text-lg flex items-center gap-2">
               {activeTab === "disputed"
@@ -219,10 +254,13 @@ export default function StudentAttendanceView() {
           </div>
 
           {/* TAB BUTTONS */}
-          <div className="flex items-center gap-3 bg-muted p-1 rounded-xl border border-border">
+          <div
+            className="flex items-center gap-3 bg-muted p-1 rounded-xl border border-border animate-in slide-in-from-right-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "600ms" }}
+          >
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all hover:scale-105 active:scale-95 duration-300 ${
                 activeTab === "all"
                   ? "bg-card text-foreground border-border shadow-sm"
                   : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
@@ -232,7 +270,7 @@ export default function StudentAttendanceView() {
             </button>
             <button
               onClick={() => setActiveTab("absent")}
-              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all hover:scale-105 active:scale-95 duration-300 ${
                 activeTab === "absent"
                   ? "bg-card text-foreground border-border shadow-sm"
                   : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
@@ -242,7 +280,7 @@ export default function StudentAttendanceView() {
             </button>
             <button
               onClick={() => setActiveTab("disputed")}
-              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold shadow-sm rounded-lg border transition-all hover:scale-105 active:scale-95 duration-300 ${
                 activeTab === "disputed"
                   ? "bg-card text-foreground border-border shadow-sm"
                   : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/80"
@@ -254,13 +292,11 @@ export default function StudentAttendanceView() {
         </div>
 
         {/* Table Header */}
-        <div className="grid grid-cols-12 px-8 py-4 bg-muted/50 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          <div className="col-span-12 md:col-span-4 pl-2">Course Info</div>
-          <div className="hidden md:block col-span-3">Check-in Time</div>
-          <div className="hidden md:block col-span-3">My Signal</div>
-          <div className="col-span-12 md:col-span-2 text-right pr-2">
-            Status
-          </div>
+        <div className="hidden md:grid grid-cols-12 px-4 sm:px-8 py-4 bg-muted/50 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="col-span-4 pl-2">Course Info</div>
+          <div className="col-span-3">Check-in Time</div>
+          <div className="col-span-3">My Signal</div>
+          <div className="col-span-2 text-right pr-2">Status</div>
         </div>
 
         {/* Rows */}
@@ -289,100 +325,109 @@ export default function StudentAttendanceView() {
               return (
                 <div
                   key={record.id}
-                  className="grid grid-cols-12 px-8 py-5 items-center hover:bg-muted/50 transition-colors group cursor-pointer"
+                  className="grid grid-cols-1 md:grid-cols-12 px-4 sm:px-8 py-4 items-start md:items-center hover:bg-muted/50 transition-colors group cursor-pointer gap-4 md:gap-0 border-b border-border/50 last:border-0"
                 >
                   {/* Column 1: Course Info */}
-                  <div className="col-span-12 md:col-span-4 flex items-center gap-4">
-                    <div>
+                  <div className="md:col-span-4 flex items-center gap-4 w-full">
+                    <div className="flex-1 min-w-0">
                       <p
-                        className={`font-bold text-foreground text-base transition-colors ${hoverTextColor}`}
+                        className={`font-bold text-foreground text-base transition-colors truncate ${hoverTextColor}`}
                       >
                         {record.course}
                       </p>
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                      <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">
                         {record.room} • {record.prof}
                       </p>
                     </div>
                   </div>
 
-                  {/* Column 2: Time */}
-                  <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-foreground">
-                        {record.date}
+                  {/* Mobile Row: Time & Signal */}
+                  <div className="grid grid-cols-2 w-full gap-4 md:contents">
+                    {/* Column 2: Time */}
+                    <div className="md:col-span-3">
+                      <span className="md:hidden text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                        Check-in Time
                       </span>
-                      <span
-                        className={`text-xs flex items-center gap-1.5 mt-1 font-medium ${
-                          record.status === "Present"
-                            ? "text-muted-foreground"
-                            : record.status === "Late"
-                              ? "text-amber-600 dark:text-amber-400 font-bold"
-                              : record.status === "Disputed"
-                                ? "text-blue-600 dark:text-blue-400 font-bold"
-                                : "text-rose-600 dark:text-rose-400"
-                        }`}
-                      >
-                        {record.status === "Present" && (
-                          <CheckCircle2
-                            size={12}
-                            className="text-emerald-500"
-                          />
-                        )}
-                        {record.status === "Late" && <Clock size={12} />}
-                        {record.status === "Absent" && <XCircle size={12} />}
-                        {record.status === "Disputed" && (
-                          <HelpCircle size={12} />
-                        )}
-                        {record.status === "Disputed"
-                          ? "Details Sent"
-                          : record.status === "Absent"
-                            ? "No Check-in"
-                            : `Checked in: ${record.time}`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Column 3: Signal/GPS */}
-                  <div className="col-span-6 md:col-span-3 mt-4 md:mt-0">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                          record.status === "Disputed"
-                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/30"
-                            : record.status === "Absent"
-                              ? "bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800/30"
-                              : "bg-muted border-border"
-                        }`}
-                      >
-                        <MapPin
-                          size={14}
-                          className={
-                            record.status === "Present"
-                              ? "text-emerald-500"
-                              : record.status === "Disputed"
-                                ? "text-blue-500"
-                                : record.status === "Absent"
-                                  ? "text-rose-400"
-                                  : "text-muted-foreground"
-                          }
-                        />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground">
+                          {record.date}
+                        </span>
                         <span
-                          className={`text-xs font-mono font-bold ${
-                            record.status === "Disputed"
-                              ? "text-blue-700 dark:text-blue-300"
-                              : record.status === "Absent"
-                                ? "text-rose-700 dark:text-rose-300"
-                                : "text-foreground"
+                          className={`text-xs flex items-center gap-1.5 mt-1 font-medium ${
+                            record.status === "Present"
+                              ? "text-muted-foreground"
+                              : record.status === "Late"
+                                ? "text-amber-600 dark:text-amber-400 font-bold"
+                                : record.status === "Disputed"
+                                  ? "text-blue-600 dark:text-blue-400 font-bold"
+                                  : "text-rose-600 dark:text-rose-400"
                           }`}
                         >
-                          {record.signal}
+                          {record.status === "Present" && (
+                            <CheckCircle2
+                              size={12}
+                              className="text-emerald-500"
+                            />
+                          )}
+                          {record.status === "Late" && <Clock size={12} />}
+                          {record.status === "Absent" && <XCircle size={12} />}
+                          {record.status === "Disputed" && (
+                            <HelpCircle size={12} />
+                          )}
+                          {record.status === "Disputed"
+                            ? "Details Sent"
+                            : record.status === "Absent"
+                              ? "No Check-in"
+                              : `Checked in: ${record.time}`}
                         </span>
-                      </div>  
+                      </div>
+                    </div>
+
+                    {/* Column 3: Signal/GPS */}
+                    <div className="md:col-span-3">
+                      <span className="md:hidden text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                        Signal Strength
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border w-fit ${
+                            record.status === "Disputed"
+                              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/30"
+                              : record.status === "Absent"
+                                ? "bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800/30"
+                                : "bg-muted border-border"
+                          }`}
+                        >
+                          <MapPin
+                            size={14}
+                            className={
+                              record.status === "Present"
+                                ? "text-emerald-500"
+                                : record.status === "Disputed"
+                                  ? "text-blue-500"
+                                  : record.status === "Absent"
+                                    ? "text-rose-400"
+                                    : "text-muted-foreground"
+                            }
+                          />
+                          <span
+                            className={`text-xs font-mono font-bold ${
+                              record.status === "Disputed"
+                                ? "text-blue-700 dark:text-blue-300"
+                                : record.status === "Absent"
+                                  ? "text-rose-700 dark:text-rose-300"
+                                  : "text-foreground"
+                            }`}
+                          >
+                            {record.signal}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Column 4: Status Badge */}
-                  <div className="col-span-12 md:col-span-2 text-right mt-4 md:mt-0 flex md:justify-end justify-between items-center">
+                  <div className="md:col-span-2 text-left md:text-right mt-2 md:mt-0 flex md:justify-end justify-between items-center w-full">
                     <span className="md:hidden text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Status
                     </span>

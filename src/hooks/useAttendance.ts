@@ -9,6 +9,7 @@ export interface AttendanceStats {
   presentCount: number;
   absentCount: number;
   lateCount: number;
+  pendingCount: number;
   totalStudents: number;
   attendancePercentage: number;
 }
@@ -18,6 +19,9 @@ export function useAttendance(students: Student[]) {
     const presentCount = students.filter((s) => s.status === "present").length;
     const absentCount = students.filter((s) => s.status === "absent").length;
     const lateCount = students.filter((s) => s.status === "late").length;
+    const pendingCount = students.filter(
+      (s) => s.status === "pending" || !s.status,
+    ).length;
     const totalStudents = students.length;
 
     const attendancePercentage =
@@ -27,6 +31,7 @@ export function useAttendance(students: Student[]) {
       presentCount,
       absentCount,
       lateCount,
+      pendingCount,
       totalStudents,
       attendancePercentage,
     };

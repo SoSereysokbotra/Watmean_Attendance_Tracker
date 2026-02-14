@@ -1,4 +1,4 @@
-import { User, RefreshToken, VerificationCode } from "@/lib/supabase/types";
+import { User, RefreshToken, VerificationCode } from "@/lib/db/types";
 
 export type UserRole = "student" | "teacher" | "admin";
 
@@ -19,6 +19,7 @@ export interface SignupRequest {
   fullName: string;
   password: string;
   role?: UserRole;
+  token?: string;
 }
 
 export interface LoginRequest {
@@ -32,6 +33,7 @@ export interface VerificationRequest {
 
 export interface PasswordResetRequest {
   email: string;
+  fullName?: string;
 }
 
 export interface PasswordResetVerifyRequest {
@@ -54,7 +56,7 @@ export interface AuthResponse {
     userId?: string;
     accessToken?: string;
     refreshToken?: string;
-    user?: Pick<User, "id" | "email" | "full_name" | "role">;
+    user?: Pick<User, "id" | "email" | "fullName" | "role">;
   };
 }
 
