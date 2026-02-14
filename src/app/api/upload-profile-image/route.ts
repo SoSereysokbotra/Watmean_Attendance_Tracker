@@ -10,7 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<Response> {
   try {
     // Verify authentication
     const accessToken = await CookieUtil.getAccessTokenCookie();
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Upload to Cloudinary
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "watmean/profiles",
