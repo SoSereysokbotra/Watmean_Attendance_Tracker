@@ -168,7 +168,8 @@ export default function SchedulePage() {
         <div className="flex gap-3">
           <button
             onClick={() => setViewMode(viewMode === "day" ? "month" : "day")}
-            className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all hover:scale-105 active:scale-95 duration-300 animate-in slide-in-from-top-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "100ms" }}
           >
             {viewMode === "day" ? (
               <>
@@ -180,7 +181,10 @@ export default function SchedulePage() {
               </>
             )}
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all">
+          <button
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all hover:scale-105 active:scale-95 duration-300 animate-in slide-in-from-top-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
             <Bell size={18} /> Alerts
           </button>
         </div>
@@ -194,18 +198,19 @@ export default function SchedulePage() {
             {/* Show unique dates from schedule, sorted */}
             {Array.from(new Set(schedule.map((s) => s.date)))
               .sort()
-              .map((date) => (
+              .map((date, idx) => (
                 <button
                   key={date}
                   onClick={() => {
                     setActiveDate(date);
                     setViewMode("day");
                   }}
-                  className={`relative w-full text-left group transition-all duration-200 rounded-xl border px-5 py-4 ${
+                  className={`relative w-full text-left group transition-all duration-200 rounded-xl border px-5 py-4 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 origin-left ${
                     activeDate === date
                       ? "bg-card border-brand-primary shadow-md ring-1 ring-brand-primary/10 z-10"
                       : "bg-card/50 border-transparent hover:bg-card hover:border-border hover:shadow-sm hover:translate-x-1"
                   }`}
+                  style={{ animationDelay: `${100 + idx * 50}ms` }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -278,7 +283,8 @@ export default function SchedulePage() {
                 {filteredSchedule.map((session, index) => (
                   <div
                     key={session.id}
-                    className="group relative flex gap-4 md:gap-6"
+                    className="group relative flex gap-4 md:gap-6 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+                    style={{ animationDelay: `${200 + index * 100}ms` }}
                   >
                     <div className="w-20 md:w-24 pt-5 flex flex-col items-end text-right flex-shrink-0">
                       <span className="text-base font-bold text-foreground leading-none">
@@ -299,7 +305,7 @@ export default function SchedulePage() {
                       )}
                     </div>
 
-                    <div className="flex-1 bg-card rounded-2xl p-5 border border-border shadow-sm group-hover:shadow-lg group-hover:border-brand-primary/30 transition-all duration-300 p-8">
+                    <div className="flex-1 bg-card rounded-2xl p-8 border border-border shadow-sm group-hover:shadow-lg group-hover:border-brand-primary/30 transition-all duration-300">
                       <div className="mb-4">
                         <h3 className="text-lg md:text-xl font-extrabold text-foreground mb-1">
                           {session.className}
@@ -330,7 +336,7 @@ export default function SchedulePage() {
             </>
           ) : (
             /* --- NEW MONTH VIEW COMPONENT --- */
-            <div className="bg-card rounded-3xl border border-border p-6 shadow-sm animate-in fade-in zoom-in-95 duration-300">
+            <div className="bg-card rounded-3xl border border-border p-6 shadow-sm animate-in fade-in zoom-in-95 duration-500 fill-mode-both">
               {/* Calendar Controls */}
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-foreground">
@@ -342,19 +348,19 @@ export default function SchedulePage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-2 rounded-xl border border-border hover:bg-muted transition-colors"
+                    className="p-2 rounded-xl border border-border hover:bg-muted transition-colors hover:scale-110 active:scale-95 duration-300"
                   >
                     <ChevronLeft size={18} />
                   </button>
                   <button
                     onClick={() => setCurrentMonth(new Date())}
-                    className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border border-border hover:bg-muted transition-colors"
+                    className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-xl border border-border hover:bg-muted transition-colors hover:scale-105 active:scale-95 duration-300"
                   >
                     Today
                   </button>
                   <button
                     onClick={handleNextMonth}
-                    className="p-2 rounded-xl border border-border hover:bg-muted transition-colors"
+                    className="p-2 rounded-xl border border-border hover:bg-muted transition-colors hover:scale-110 active:scale-95 duration-300"
                   >
                     <ChevronRight size={18} />
                   </button>

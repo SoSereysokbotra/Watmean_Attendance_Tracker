@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MapPin, Calendar, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudents, useAttendance } from "@/hooks";
-import { Student } from "@/types";
+import { Student, StudentStatus } from "@/types";
 import {
   SessionStats,
   LiveActivityTab,
@@ -47,7 +47,7 @@ export default function ClassDetailPage() {
               avatar: student.avatar || null,
               checkInTime: student.checkInTime || null, // Use checkInTime from API
               distance: null,
-              status: student.status || "absent", // Use status from API, default to absent only if missing
+              status: student.status || "pending", // Use status from API, default to pending only if missing
             }),
           );
           setInitialStudents(mappedStudents);
@@ -145,7 +145,7 @@ function ActiveSessionView({
 
   const handleToggleStatus = async (
     studentId: string,
-    status: "present" | "absent" | "late" | "excused",
+    status: StudentStatus,
   ) => {
     const prev = students.find((s) => s.id === studentId);
     // Optimistic UI update
@@ -227,9 +227,12 @@ function ActiveSessionView({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-700">
       {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div
+        className="flex flex-col md:flex-row md:items-start justify-between gap-4 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <div>
           <h1 className="text-3xl font-bold text-foreground">
             {classInfo.name}
@@ -250,7 +253,8 @@ function ActiveSessionView({
             onClick={handleRefresh}
             disabled={refreshing}
             title="Refresh to see newly joined students"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto transition-all hover:scale-105 active:scale-95 duration-300 animate-in slide-in-from-right-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
           >
             <RefreshCw
               size={16}
@@ -258,7 +262,11 @@ function ActiveSessionView({
             />
             Refresh
           </Button>
-          <Button variant="outline" className="w-full sm:w-auto">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto transition-all hover:scale-105 active:scale-95 duration-300 animate-in slide-in-from-right-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "300ms" }}
+          >
             <Download size={16} className="mr-2" /> Export CSV
           </Button>
         </div>
@@ -268,17 +276,21 @@ function ActiveSessionView({
       <SessionStats session={session} stats={stats} targetPercentage={90} />
 
       {/* Tabs Navigation */}
-      <div className="border-b border-border overflow-x-auto">
+      <div
+        className="border-b border-border overflow-x-auto animate-in slide-in-from-bottom-4 duration-700 fill-mode-both"
+        style={{ animationDelay: "150ms" }}
+      >
         <div className="flex gap-6 min-w-max px-1">
-          {tabs.map((tab) => (
+          {tabs.map((tab, idx) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`pb-3 text-sm font-medium transition-all duration-300 border-b-2 whitespace-nowrap hover:scale-105 animate-in slide-in-from-top-4 duration-700 fill-mode-both ${
                 activeTab === tab
                   ? "border-brand-primary text-brand-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
+              style={{ animationDelay: `${400 + idx * 50}ms` }}
             >
               {tab}
             </button>

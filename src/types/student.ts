@@ -2,7 +2,12 @@
  * Student-related type definitions
  */
 
-export type StudentStatus = "present" | "absent" | "late" | "excused";
+export type StudentStatus =
+  | "present"
+  | "absent"
+  | "late"
+  | "excused"
+  | "pending";
 
 export interface Student {
   id: string;

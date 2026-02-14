@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
           .join("")
           .toUpperCase()
           .slice(0, 2),
+        profileImage: user.profileImage,
       },
       stats: {
         attendancePercentage: stats.percentage,

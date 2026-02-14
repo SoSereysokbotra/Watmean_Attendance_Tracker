@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, forwardRef } from "react";
-import { X, Loader2, Info, Clock } from "lucide-react";
+import { X, Loader2, Info, Clock, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 import { CSVUploadField } from "@/components/teacher/CSVUploadField";
@@ -110,6 +110,24 @@ export function CreateClassModal({
     const newTimes = { ...scheduleTimes, [type]: value };
     setScheduleTimes(newTimes);
     updateScheduleString(scheduleDays, newTimes.start, newTimes.end);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData({
+            ...formData,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Could set an error state here if desired
+        },
+      );
+    }
   };
 
   if (!isOpen) return null;
@@ -354,9 +372,18 @@ export function CreateClassModal({
                   <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Geofence Location & Radius
                   </label>
-                  <span className="text-xs text-muted-foreground">
-                    Radius: {formData.radius}m
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      className="text-xs flex items-center gap-1 text-brand-primary font-bold hover:underline"
+                    >
+                      <Navigation size={12} /> Use My Location
+                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      Radius: {formData.radius}m
+                    </span>
+                  </div>
                 </div>
                 <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border">
                   <TeacherLocationPicker

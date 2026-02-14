@@ -8,6 +8,13 @@
       "when": 1770965652071,
       "tag": "0000_left_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771060134674,
+      "tag": "0001_fair_sir_ram",
+      "breakpoints": true
     }
   ]
 }

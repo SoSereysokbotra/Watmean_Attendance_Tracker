@@ -5,15 +5,11 @@ import {
   getClassInvitationEmailTemplate,
   ClassInvitationData,
 } from "../../email/templates/class-invitation.template";
+import { getTeacherInvitationEmailTemplate } from "../../email/templates/teacher-invitation.template";
 
 export class EmailService {
   private static provider = new NodemailerProvider();
 
-  /**
-   * Send a password reset email to the user
-   * @param email - The recipient's email address
-   * @param code - The verification code
-   */
   static async sendPasswordResetEmail(
     email: string,
     code: string,
@@ -22,11 +18,6 @@ export class EmailService {
     await this.provider.sendEmail(email, "Password Reset", html);
   }
 
-  /**
-   * Send a verification email to the user
-   * @param email - The recipient's email address
-   * @param code - The verification code
-   */
   static async sendVerificationEmail(
     email: string,
     code: string,
@@ -34,12 +25,6 @@ export class EmailService {
     const html = getVerificationEmailTemplate(code);
     await this.provider.sendEmail(email, "Email Verification", html);
   }
-
-  /**
-   * Send a class invitation email
-   * @param email - The recipient's email address
-   * @param data - Class invitation data
-   */
   static async sendClassInvitationEmail(
     email: string,
     data: ClassInvitationData,
@@ -48,13 +33,6 @@ export class EmailService {
     const subject = `You've been invited to join ${data.className}`;
     await this.provider.sendEmail(email, subject, html);
   }
-
-  /**
-   * Send an admin-generated user invitation email (e.g. teacher/admin onboarding)
-   * @param email - The recipient's email address
-   * @param link - The registration link containing the invite token
-   * @param options - Optional display data such as role and name
-   */
   static async sendInvitationEmail(
     email: string,
     link: string,
@@ -65,13 +43,11 @@ export class EmailService {
       : "Teacher";
     const displayName = options?.name || "there";
 
-    const html = `
-      <p>Hi ${displayName},</p>
-      <p>You have been invited to join Watmean as a <strong>${roleLabel}</strong>.</p>
-      <p>To complete your registration, please click the secure link below:</p>
-      <p><a href="${link}">${link}</a></p>
-      <p>If you did not expect this invitation, you can safely ignore this email.</p>
-    `;
+    const html = getTeacherInvitationEmailTemplate(
+      link,
+      roleLabel,
+      displayName,
+    );
 
     const subject = `You're invited as a ${roleLabel} on Watmean`;
     await this.provider.sendEmail(email, subject, html);

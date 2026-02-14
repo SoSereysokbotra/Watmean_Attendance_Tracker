@@ -108,6 +108,7 @@ export default function TeacherSidebar({
     teacherId?: string;
     initials: string;
     department?: string;
+    profileImage?: string;
   } | null>(null);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
@@ -131,6 +132,7 @@ export default function TeacherSidebar({
             teacherId: data.profile.teacherId,
             initials: initials,
             department: "Teacher",
+            profileImage: data.profile.profileImage,
           });
         }
       } catch (error) {
@@ -164,6 +166,7 @@ export default function TeacherSidebar({
   const teacherName = user?.name || "Loading...";
   const teacherInitials = user?.initials || "...";
   const department = user?.department || "Teacher";
+  const profileImage = user?.profileImage;
 
   return (
     <aside
@@ -177,9 +180,17 @@ export default function TeacherSidebar({
         } border-b border-border sticky top-0 bg-brand-dark/80 dark:bg-background/80 backdrop-blur-md z-10`}
       >
         <div className="relative shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-            {teacherInitials}
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={teacherName}
+              className="w-10 h-10 rounded-full object-cover border-2 border-brand-primary"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {teacherInitials}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
         </div>
 

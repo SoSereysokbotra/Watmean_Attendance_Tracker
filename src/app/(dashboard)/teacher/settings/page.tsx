@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { User, Globe, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { SettingsLayout } from "@/components/settings/SettingsLayout";
 import { ThemeSelectionCard } from "@/components/settings/ThemeSelectionCard";
 import { UserProfileSettings } from "@/components/settings/UserProfileSettings";
@@ -43,14 +44,14 @@ export default function TeacherSettingsView() {
       if (response.ok) {
         const data = await response.json();
         setProfile(data.profile);
-        // toast.success("Profile updated successfully");
+        toast.success("Profile updated successfully!");
       } else {
         console.error("Failed to update profile");
-        // toast.error("Failed to update profile");
+        toast.error("Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      // toast.error("Error updating profile");
+      toast.error("Error updating profile");
     }
   };
 
@@ -62,7 +63,14 @@ export default function TeacherSettingsView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-4 border-border border-t-brand-primary animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm animate-pulse">
+            Loading your settings...
+          </p>
+        </div>
       </div>
     );
   }
@@ -74,6 +82,7 @@ export default function TeacherSettingsView() {
         email: profile.email,
         phone: "N/A", // API doesn't have phone yet
         major: "Teacher", // Default or fetch if available
+        profileImage: profile.profileImage,
       }
     : {
         fullName: "",
@@ -105,7 +114,10 @@ export default function TeacherSettingsView() {
       {activeTab === "profile" && (
         <UserProfileSettings
           role="Teacher"
-          userId={profile ? formatTeacherId(profile.id, profile.teacherId) : ""}
+          userId={profile?.id || ""}
+          displayId={
+            profile ? formatTeacherId(profile.id, profile.teacherId) : ""
+          }
           userData={teacherData}
           onSave={handleSaveProfile}
         />

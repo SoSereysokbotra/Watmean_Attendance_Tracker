@@ -102,6 +102,7 @@ export default function AdminSidebar({
     name: string;
     initials: string;
     role: string;
+    profileImage?: string;
   } | null>(null);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
@@ -124,6 +125,7 @@ export default function AdminSidebar({
             name: fullName,
             initials: initials,
             role: "Administrator",
+            profileImage: data.profile.profileImage,
           });
         }
       } catch (error) {
@@ -157,6 +159,7 @@ export default function AdminSidebar({
   const adminName = user?.name || "Loading...";
   const adminInitials = user?.initials || "...";
   const role = user?.role || "Administrator";
+  const profileImage = user?.profileImage;
 
   return (
     <aside
@@ -171,9 +174,17 @@ export default function AdminSidebar({
         } border-b border-border sticky top-0 bg-brand-dark/80 dark:bg-background/80 backdrop-blur-md z-10`}
       >
         <div className="relative shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-blue-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-            {adminInitials}
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={adminName}
+              className="w-10 h-10 rounded-full object-cover border-2 border-brand-primary"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-blue-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {adminInitials}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
         </div>
 

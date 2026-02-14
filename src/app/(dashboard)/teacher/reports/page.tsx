@@ -117,7 +117,7 @@ export default function ReportsPage() {
           {/* WRAP THE BUTTON IN POPOVER */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all">
+              <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold shadow-sm hover:bg-muted hover:border-muted-foreground/30 transition-all hover:scale-105 active:scale-95 duration-300">
                 <CalendarIcon size={16} />
                 {/* Optional: Show selected date or just "History" */}
                 {date ? format(date, "PPP") : "History"}
@@ -138,7 +138,7 @@ export default function ReportsPage() {
           {/* DOWNLOAD BUTTON */}
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-semibold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 hover:shadow-brand-primary/30 transition-all active:scale-95 hover:scale-105 duration-300"
           >
             <Download size={16} /> Download Log
           </button>
@@ -184,10 +184,11 @@ export default function ReportsPage() {
             icon: <AlertCircle size={80} />,
             colorClass: "text-rose-600 dark:text-rose-400",
           },
-        ].map((stat) => (
+        ].map((stat, idx) => (
           <div
             key={stat.label}
-            className="relative flex flex-col group cursor-default transition-all duration-300"
+            className="relative flex flex-col group cursor-default transition-all duration-300 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both hover:scale-105 origin-bottom"
+            style={{ animationDelay: `${200 + idx * 100}ms` }}
           >
             {/* The colored top bar */}
             <div
@@ -228,11 +229,17 @@ export default function ReportsPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm">
+        <div
+          className="lg:col-span-2 bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm animate-in fade-in slide-in-from-left-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "500ms" }}
+        >
           <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
             Weekly Trend (Last 7 Days)
           </h3>
-          <div className="h-[250px] sm:h-[300px] w-full min-w-0">
+          <div
+            className="h-[250px] sm:h-[300px] w-full min-w-0 animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+            style={{ animationDelay: "600ms" }}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trend.length > 0 ? trend : []}>
                 <defs>
@@ -295,11 +302,17 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm">
+        <div
+          className="bg-card rounded-3xl border border-border p-4 sm:p-8 shadow-sm animate-in fade-in slide-in-from-right-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "700ms" }}
+        >
           <h3 className="text-lg font-bold text-foreground mb-6">
             Class Performance
           </h3>
-          <div className="h-[250px] sm:h-[300px] w-full">
+          <div
+            className="h-[250px] sm:h-[300px] w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+            style={{ animationDelay: "800ms" }}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"

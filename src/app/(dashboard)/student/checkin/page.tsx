@@ -152,7 +152,7 @@ export default function LiveMapView() {
   // Show loading state while fetching session
   if (loadingSession) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] animate-in fade-in duration-500">
         <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
       </div>
     );
@@ -161,14 +161,23 @@ export default function LiveMapView() {
   // Show "no active session" message
   if (!activeSession) {
     return (
-      <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col items-center justify-center p-8 text-center">
-        <div className="bg-muted/30 p-6 rounded-full mb-6">
+      <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+        <div
+          className="bg-muted/30 p-6 rounded-full mb-6 animate-in scale-in-95 duration-500 fill-mode-both"
+          style={{ animationDelay: "100ms" }}
+        >
           <AlertCircle className="h-16 w-16 text-muted-foreground" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2
+          className="text-2xl font-bold text-foreground mb-2 animate-in slide-in-from-top-4 duration-500 fill-mode-both"
+          style={{ animationDelay: "200ms" }}
+        >
           No Active Session
         </h2>
-        <p className="text-muted-foreground max-w-md">
+        <p
+          className="text-muted-foreground max-w-md animate-in fade-in duration-500 fill-mode-both"
+          style={{ animationDelay: "300ms" }}
+        >
           There are no active attendance sessions at the moment. Your teacher
           needs to launch a session before you can check in.
         </p>
@@ -177,7 +186,7 @@ export default function LiveMapView() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group">
+    <div className="h-[calc(100vh-8rem)] bg-card rounded-2xl border border-border shadow-sm overflow-hidden relative flex flex-col group animate-in fade-in duration-700">
       {/* Map Area */}
       <div className="flex-1 relative z-0">
         <StudentCheckinMap
@@ -190,7 +199,7 @@ export default function LiveMapView() {
 
         {/* Loading Overlay */}
         {!position && !error && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3">
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
             <Loader2 className="animate-spin text-brand-primary" size={32} />
             <p className="text-sm font-medium text-muted-foreground">
               Acquiring GPS Signal...
@@ -200,17 +209,29 @@ export default function LiveMapView() {
 
         {/* Success Overlay */}
         {success && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3">
-            <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
+            <div
+              className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-4 animate-in scale-in-95 duration-500 fill-mode-both"
+              style={{ animationDelay: "100ms" }}
+            >
               <MapPin className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h3 className="text-xl font-bold text-foreground">Checked In!</h3>
-            <p className="text-muted-foreground">
+            <h3
+              className="text-xl font-bold text-foreground animate-in slide-in-from-top-4 duration-500 fill-mode-both"
+              style={{ animationDelay: "150ms" }}
+            >
+              Checked In!
+            </h3>
+            <p
+              className="text-muted-foreground animate-in fade-in duration-500 fill-mode-both"
+              style={{ animationDelay: "200ms" }}
+            >
               You have successfully marked your attendance.
             </p>
             <button
               onClick={() => setSuccess(null)}
-              className="mt-4 px-6 py-2 bg-brand-primary text-primary-foreground rounded-lg"
+              className="mt-4 px-6 py-2 bg-brand-primary text-primary-foreground rounded-lg hover:scale-105 active:scale-95 duration-300 animate-in fade-in duration-500 fill-mode-both"
+              style={{ animationDelay: "250ms" }}
             >
               Close
             </button>
@@ -219,13 +240,16 @@ export default function LiveMapView() {
 
         {/* Error Overlay (if checkin fail) */}
         {error && !success && position && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-rose-50 dark:bg-rose-900/90 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-200 px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-rose-50 dark:bg-rose-900/90 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-200 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-top-4 duration-500 fill-mode-both">
             {error}
           </div>
         )}
 
         {/* Top Bar */}
-        <div className="absolute top-0 left-0 right-0 p-0.5 z-[1000]">
+        <div
+          className="absolute top-0 left-0 right-0 p-0.5 z-[1000] animate-in slide-in-from-top-4 duration-700 fill-mode-both"
+          style={{ animationDelay: "100ms" }}
+        >
           <div className="bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3">
             <div className="flex items-center justify-between">
               <div>
@@ -258,7 +282,10 @@ export default function LiveMapView() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="bg-card p-4 border-t border-border flex justify-between items-center z-[1000]">
+      <div
+        className="bg-card p-4 border-t border-border flex justify-between items-center z-[1000] animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+        style={{ animationDelay: "200ms" }}
+      >
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Info size={14} />
           <span>
@@ -268,7 +295,7 @@ export default function LiveMapView() {
         <button
           disabled={!isWithinRange || loading || !!success}
           onClick={handleCheckIn}
-          className={`px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all ${
+          className={`px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg transition-all hover:scale-105 active:scale-95 duration-300 ${
             isWithinRange && !loading && !success
               ? "bg-brand-primary text-primary-foreground hover:bg-brand-primary/90"
               : "bg-muted text-muted-foreground cursor-not-allowed"

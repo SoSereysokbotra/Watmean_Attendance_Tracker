@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         isVerified: user.is_verified,
         status: user.status,
         teacherId: user.teacher_id,
+        profileImage: user.profile_image,
       },
     });
   } catch (error) {
@@ -95,6 +96,7 @@ export async function PUT(request: NextRequest) {
         isVerified: updatedUser.is_verified,
         status: updatedUser.status,
         teacherId: updatedUser.teacher_id,
+        profileImage: updatedUser.profile_image,
       },
     });
   } catch (error) {

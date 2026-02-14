@@ -157,7 +157,33 @@ export class AcademicRepository {
     // This is a simplified logic. In a real app, we'd parse schedule strings or have a better schedule model.
     // For now, returning the first class for demonstration.
     const studentClasses = await this.getStudentClasses(studentId);
-    return studentClasses[0] || null;
+
+    if (studentClasses.length === 0) return null;
+
+    const nextClass = studentClasses[0];
+
+    // Check if student has checked in for this class today
+    const today = new Date().toISOString().split("T")[0];
+    const existing = await db
+      .select()
+      .from(attendanceRecords)
+      .where(
+        and(
+          eq(attendanceRecords.studentId, studentId),
+          eq(attendanceRecords.classId, nextClass.id),
+          eq(attendanceRecords.date, today),
+          or(
+            eq(attendanceRecords.status, "present"),
+            eq(attendanceRecords.status, "late"),
+          ),
+        ),
+      )
+      .then((res) => res[0]);
+
+    return {
+      ...nextClass,
+      isCheckedIn: !!existing,
+    };
   }
 
   /**
@@ -346,8 +372,46 @@ export class AcademicRepository {
       }
     }
 
-    // 4. At Risk Students
-    const atRiskCount = 0; // Placeholder until complex aggregation logic is reliable
+    // 4. At Risk Students - Calculate students with attendance < 75%
+    let atRiskCount = 0;
+
+    if (studentsCount > 0 && teacherClasses.length > 0) {
+      const classIds = teacherClasses.map((c) => c.id);
+
+      // Get all unique students for this teacher
+      const teacherStudents = await db
+        .selectDistinct({ studentId: enrollments.studentId })
+        .from(enrollments)
+        .where(sql`${enrollments.classId} IN ${classIds}`);
+
+      // For each student, calculate attendance and check if at-risk (< 75%)
+      for (const enrollment of teacherStudents) {
+        const studentRecords = await db
+          .select({
+            status: attendanceRecords.status,
+          })
+          .from(attendanceRecords)
+          .where(
+            and(
+              eq(attendanceRecords.studentId, enrollment.studentId),
+              sql`${attendanceRecords.classId} IN ${classIds}`,
+            ),
+          );
+
+        const total = studentRecords.length;
+        if (total === 0) continue; // Skip students with no attendance records
+
+        const attendedCount = studentRecords.filter(
+          (r) => r.status === "present" || r.status === "late",
+        ).length;
+
+        const attendancePercentage = Math.round((attendedCount / total) * 100);
+
+        if (attendancePercentage < 75) {
+          atRiskCount++;
+        }
+      }
+    }
 
     return {
       totalClasses: classesCount,
@@ -653,46 +717,15 @@ export class AcademicRepository {
    * Get attendance reports/stats for a teacher
    */
   static async getAttendanceReport(teacherId: string) {
-    // Reuse logic from getTeacherStats for consistency
+    // Get all stats including calculated at-risk students
     const stats = await this.getTeacherStats(teacherId);
 
-    // Calculate total students (enrolled)
-    // stats.activeStudents is actually the count of enrolled students based on getTeacherStats implementation
-
-    // For low attendance students (< 75%)
-    // We need a real query here. Determine students with attendance < 75%
-    // Fetch all enrollments for teacher's classes
-    const students = await db
-      .select({
-        studentId: enrollments.studentId,
-        classId: enrollments.classId,
-      })
-      .from(enrollments)
-      .innerJoin(classes, eq(enrollments.classId, classes.id))
-      .innerJoin(users, eq(enrollments.studentId, users.id))
-      .where(
-        and(eq(classes.teacherId, teacherId), ne(users.status, "deleted")),
-      );
-
-    let lowAttendanceCount = 0;
-
-    // This loop is N+1 but acceptable for prototype scale
-    // Optimization: aggregations in SQL
-    /*
-    for (const student of students) {
-         const att = await this.getStudentAttendanceStats(student.studentId);
-         if (att.percentage < 75) lowAttendanceCount++;
-    }
-    */
-    // Mocking low details for performance in prototype if loop is too heavy
-    // But let's try a simplified approach:
-    lowAttendanceCount = Math.round(stats.activeStudents * 0.1); // Mock 10% are 'at risk' until individual aggregation is optimized
-
+    // Return report with actual calculated values (not mocked)
     return {
       totalClasses: stats.totalClasses,
       averageAttendance: stats.averageAttendance,
       totalStudents: stats.activeStudents,
-      lowAttendanceStudents: lowAttendanceCount,
+      lowAttendanceStudents: stats.atRiskCount, // Now uses actual calculation from getTeacherStats
     };
   }
 

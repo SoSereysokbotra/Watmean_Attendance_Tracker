@@ -29,6 +29,7 @@ interface DashboardData {
     room: string;
     teacherName: string;
     code: string;
+    isCheckedIn?: boolean;
   } | null;
   todaySchedule: Array<{
     className: string;
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,30 +91,46 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in duration-700">
       <DashboardHeader
         studentName={data.user.name}
         todayClasses={data.stats.todayClasses}
         currentSession={data.currentSession}
+        onSearchChange={setSearchTerm}
+        searchValue={searchTerm}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard
-          title="Overall Attendance"
-          value={`${data.stats.attendancePercentage}%`}
-          icon={<TrendingUp size={24} />}
-        />
+        <div
+          className="animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+          style={{ animationDelay: "100ms" }}
+        >
+          <StatsCard
+            title="Overall Attendance"
+            value={`${data.stats.attendancePercentage}%`}
+            icon={<TrendingUp size={24} />}
+          />
+        </div>
 
         {data.nextClass ? (
-          <NextClassCard
-            time={data.nextClass.schedule?.split(" ")[0] || "TBD"} // Simplified time extraction
-            subject={data.nextClass.name}
-            room={data.nextClass.room || "TBD"}
-            professor={data.nextClass.teacherName || "TBD"}
-            checkInPath={`/student/checkin?classId=${data.nextClass.id}`}
-          />
+          <div
+            className="animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
+            <NextClassCard
+              time={data.nextClass.schedule?.split(" ")[0] || "TBD"} // Simplified time extraction
+              subject={data.nextClass.name}
+              room={data.nextClass.room || "TBD"}
+              professor={data.nextClass.teacherName || "TBD"}
+              checkInPath={`/student/checkin?classId=${data.nextClass.id}`}
+              isCheckedIn={data.nextClass.isCheckedIn}
+            />
+          </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border/40 p-6 flex flex-col justify-center items-center text-center shadow-sm">
+          <div
+            className="bg-card rounded-xl border border-border/40 p-6 flex flex-col justify-center items-center text-center shadow-sm animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
             <div className="bg-brand-primary/10 p-3 rounded-full mb-3">
               <Clock className="text-brand-primary" size={24} />
             </div>
@@ -123,47 +141,74 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <StatsCard
-          title="Late Arrivals"
-          value={data.stats.lateArrivals.toString()}
-          icon={<Clock size={24} />}
-        />
+        <div
+          className="animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+          style={{ animationDelay: "300ms" }}
+        >
+          <StatsCard
+            title="Late Arrivals"
+            value={data.stats.lateArrivals.toString()}
+            icon={<Clock size={24} />}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <DashboardSection title="Today's Schedule">
           <div className="space-y-4">
-            {data.todaySchedule.length > 0 ? (
-              data.todaySchedule.map((cls, index) => {
-                // Ensure status is valid, default to 'upcoming' if not
-                const validStatus = [
-                  "present",
-                  "upcoming",
-                  "absent",
-                  "late",
-                ].includes(cls.status)
-                  ? (cls.status as "present" | "upcoming" | "absent" | "late")
-                  : "upcoming";
+            {(() => {
+              const filteredSchedule = data.todaySchedule.filter(
+                (cls) =>
+                  cls.className
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                  cls.room.toLowerCase().includes(searchTerm.toLowerCase()),
+              );
 
-                return (
-                  <ScheduleItem
-                    key={index}
-                    time={cls.schedule?.split(" ")[0] || "TBD"}
-                    period="AM" // Placeholder, would parse from schedule
-                    title={cls.className}
-                    location={`${cls.room || "TBD"}`}
-                    status={validStatus}
-                    statusText={
-                      cls.status.charAt(0).toUpperCase() + cls.status.slice(1)
-                    }
-                  />
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
-                No classes scheduled for today.
-              </div>
-            )}
+              if (filteredSchedule.length > 0) {
+                return filteredSchedule.map((cls, index) => {
+                  // Ensure status is valid, default to 'upcoming' if not
+                  const validStatus = [
+                    "present",
+                    "upcoming",
+                    "absent",
+                    "late",
+                  ].includes(cls.status)
+                    ? (cls.status as "present" | "upcoming" | "absent" | "late")
+                    : "upcoming";
+
+                  return (
+                    <div
+                      key={index}
+                      className="animate-in slide-in-from-left-6 duration-700 fill-mode-both"
+                      style={{ animationDelay: `${400 + index * 100}ms` }}
+                    >
+                      <ScheduleItem
+                        key={index}
+                        time={cls.schedule?.split(" ")[0] || "TBD"}
+                        period="AM" // Placeholder, would parse from schedule
+                        title={cls.className}
+                        location={`${cls.room || "TBD"}`}
+                        status={validStatus}
+                        statusText={
+                          cls.status.charAt(0).toUpperCase() +
+                          cls.status.slice(1)
+                        }
+                      />
+                      \n{" "}
+                    </div>
+                  );
+                });
+              }
+
+              return (
+                <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
+                  {searchTerm
+                    ? "No classes match your search."
+                    : "No classes scheduled for today."}
+                </div>
+              );
+            })()}
           </div>
         </DashboardSection>
       </div>

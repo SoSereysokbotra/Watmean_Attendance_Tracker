@@ -87,8 +87,11 @@ export default function StudentClassesPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div
+          className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "100ms" }}
+        >
           <div>
             <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
               My Courses
@@ -97,7 +100,10 @@ export default function StudentClassesPage() {
               Current semester progress and enrollment
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div
+            className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto animate-in slide-in-from-right-4 duration-700 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
             <div className="relative group w-full sm:w-auto">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-primary transition-colors"
@@ -121,7 +127,7 @@ export default function StudentClassesPage() {
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all w-full sm:w-auto">
+                <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all hover:scale-105 active:scale-95 duration-300 w-full sm:w-auto">
                   <Filter size={18} /> Filters
                 </button>
               </PopoverTrigger>
@@ -186,7 +192,7 @@ export default function StudentClassesPage() {
             </Popover>
             <Button
               onClick={() => setShowJoinModal(true)}
-              className="bg-brand-primary hover:bg-brand-primary/90 text-white w-full sm:w-auto"
+              className="bg-brand-primary hover:bg-brand-primary/90 text-white w-full sm:w-auto hover:scale-105 active:scale-95 duration-300"
             >
               <Plus className="mr-2 h-4 w-4" />
               Join Class
@@ -199,7 +205,7 @@ export default function StudentClassesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-10">
         {filteredClasses.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-muted-foreground">
+          <div className="col-span-full py-12 text-center text-muted-foreground animate-in fade-in duration-500">
             No courses found matching your criteria.
           </div>
         ) : (
@@ -207,7 +213,10 @@ export default function StudentClassesPage() {
             return (
               <div
                 key={cls.id}
-                className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full"
+                className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full animate-in slide-in-from-bottom-6 duration-700 fill-mode-both hover:scale-105 origin-bottom"
+                style={{
+                  animationDelay: `${200 + filteredClasses.indexOf(cls) * 100}ms`,
+                }}
               >
                 <h3 className="text-xl font-bold text-foreground mb-1 group-hover:text-brand-primary transition-colors">
                   {cls.name}
@@ -253,7 +262,7 @@ export default function StudentClassesPage() {
                         onClick={() =>
                           router.push(`/student/checkin?classId=${cls.id}`)
                         }
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300"
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-primary-foreground hover:bg-brand-primary transition-all duration-300 hover:scale-105 active:scale-95"
                       >
                         Check In <ArrowRight size={16} />
                       </button>

@@ -31,6 +31,7 @@ export interface User {
   status: string;
   student_id?: string | null;
   teacher_id?: string | null;
+  profile_image?: string | null;
 }
 
 export interface VerificationCode {

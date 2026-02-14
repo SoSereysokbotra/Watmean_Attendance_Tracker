@@ -18,6 +18,7 @@ export const users = pgTable(
     fullName: text("full_name").notNull(),
     email: text("email").notNull().unique(),
     password: text("password").notNull(),
+    profileImage: text("profile_image"),
     role: text("role", { enum: ["student", "teacher", "admin"] })
       .notNull()
       .default("student"),

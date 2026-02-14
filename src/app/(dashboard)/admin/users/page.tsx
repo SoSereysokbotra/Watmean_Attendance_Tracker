@@ -171,9 +171,12 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-muted/40 p-6 md:p-8 space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             User Directory
@@ -190,14 +193,17 @@ export default function UsersPage() {
       </div>
 
       {/* Toolbar Section */}
-      <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div
+        className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center animate-in slide-in-from-right-4 duration-700 fill-mode-both"
+        style={{ animationDelay: "200ms" }}
+      >
         {/* Search */}
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
           <input
             type="text"
             placeholder="Search by name or email..."
-            className="w-full pl-10 pr-4 py-2 text-sm text-foreground bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50"
+            className="w-full md:w-96 pl-10 pr-4 py-2 text-sm text-foreground bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/50 hover:scale-105 active:scale-95 duration-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -254,7 +260,10 @@ export default function UsersPage() {
       </div>
 
       {/* Table Section */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div
+        className="bg-card rounded-xl border border-border shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+        style={{ animationDelay: "300ms" }}
+      >
         {isLoading ? (
           <div className="flex flex-col justify-center items-center h-96 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -300,10 +309,11 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
+                  filteredUsers.map((user, idx) => (
                     <tr
                       key={user.id}
-                      className="group hover:bg-muted/50 transition-colors"
+                      className="group hover:bg-muted/50 transition-colors animate-in fade-in duration-500 fill-mode-both"
+                      style={{ animationDelay: `${350 + idx * 50}ms` }}
                     >
                       {/* Name Column with Avatar */}
                       <td className="px-6 py-4">

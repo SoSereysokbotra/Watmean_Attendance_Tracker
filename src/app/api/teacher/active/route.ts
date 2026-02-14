@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       );
       return {
         ...student,
-        status: record ? record.status : "absent", // Default to absent if no record for THIS session
+        status: record ? record.status : "pending", // Default to pending if no record for THIS session
         checkInTime: record ? record.checkInTime : null,
       };
     });

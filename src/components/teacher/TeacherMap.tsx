@@ -28,21 +28,32 @@ interface TeacherMapProps {
   zones: Zone[];
   selectedId: string | number | null;
   onSelectZone: (id: string | number) => void;
+  focusLocation?: [number, number] | null;
 }
 
 // ---------------------------------------------------------
 // Helper: Map Controller to handle "FlyTo" animations
 // ---------------------------------------------------------
-function MapController({ selectedZone }: { selectedZone: Zone | undefined }) {
+function MapController({
+  selectedZone,
+  focusLocation,
+}: {
+  selectedZone: Zone | undefined;
+  focusLocation?: [number, number] | null;
+}) {
   const map = useMap();
 
   useEffect(() => {
     if (selectedZone) {
-      map.flyTo([selectedZone.lat, selectedZone.lng], 17, {
+      map.flyTo([selectedZone.lat, selectedZone.lng], 18, {
+        duration: 1.5,
+      });
+    } else if (focusLocation) {
+      map.flyTo(focusLocation, 18, {
         duration: 1.5,
       });
     }
-  }, [selectedZone, map]);
+  }, [selectedZone, focusLocation, map]);
 
   return null;
 }
@@ -62,11 +73,8 @@ const createIcon = (color: string) => {
   });
 };
 
-export default function TeacherMap({
-  zones,
-  selectedId,
-  onSelectZone,
-}: TeacherMapProps) {
+export default function TeacherMap(props: TeacherMapProps) {
+  const { zones, selectedId, onSelectZone } = props;
   // Fix Leaflet Default Icon Issue
   useEffect(() => {
     // @ts-ignore
@@ -92,7 +100,10 @@ export default function TeacherMap({
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-      <MapController selectedZone={selectedZone} />
+      <MapController
+        selectedZone={selectedZone}
+        focusLocation={props.focusLocation}
+      />
 
       {zones.map((zone) => {
         const isSelected = selectedId === zone.id;

@@ -11,7 +11,7 @@ export const SectionHeader = ({
   title: string;
   description: string;
 }) => (
-  <div className="mb-8">
+  <div className="mb-8 animate-slide-down">
     <h3 className="text-2xl font-bold text-foreground tracking-tight">
       {title}
     </h3>
@@ -55,24 +55,27 @@ export const ThemeSelectionCard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-slide-up">
       <SectionHeader
         title="Appearance"
         description="Customize how the application looks on your device."
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {themes.map((t) => (
+        {themes.map((t, index) => (
           <button
             key={t.id}
             onClick={() => setTheme(t.id)}
-            className={`group relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200 outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 ${
+            style={{
+              animation: `fade-in-scale 0.4s ease-out ${index * 0.1}s both`,
+            }}
+            className={`group relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-300 outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 hover:scale-105 ${
               theme === t.id
-                ? "border-brand-primary bg-brand-primary/5 ring-0"
+                ? "border-brand-primary bg-brand-primary/5 ring-0 shadow-md scale-105"
                 : "border-border hover:border-border/80 hover:bg-muted/30"
             }`}
           >
             <div
-              className={`w-full aspect-[16/10] ${t.bgClass} rounded-lg mb-4 overflow-hidden border border-border shadow-sm relative flex items-center justify-center`}
+              className={`w-full aspect-16/10 ${t.bgClass} rounded-lg mb-4 overflow-hidden border border-border shadow-sm relative flex items-center justify-center transition-all duration-300`}
             >
               {/* Simple skeletal preview for visuals */}
               {t.id !== "system" && (
@@ -95,7 +98,7 @@ export const ThemeSelectionCard = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 font-medium text-foreground">
+            <div className="flex items-center gap-2 font-medium text-foreground transition-all duration-300 group-hover:-translate-y-0.5">
               <t.icon size={18} className={t.color} />
               {t.label}
             </div>

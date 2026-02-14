@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronRight,
   Loader2,
+  Navigation,
 } from "lucide-react";
 
 // ---------------------------------------------------------
@@ -55,6 +56,27 @@ export default function TeacherLiveMap() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null,
+  );
+
+  const handleLocateMe = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          setSelectedId(null); // Deselect zone to focus on user
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Could not get your location. Please check permissions.");
+        },
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
 
   // Filter zones based on search query and active filter
   const filteredZones = zones.filter((zone) => {
@@ -120,13 +142,17 @@ export default function TeacherLiveMap() {
         <TeacherMap
           zones={filteredZones}
           selectedId={selectedId}
-          onSelectZone={setSelectedId}
+          onSelectZone={(id) => {
+            setSelectedId(id);
+            setUserLocation(null);
+          }}
+          focusLocation={userLocation}
         />
 
         {/* Floating Overlay Container */}
         <div className="absolute top-0 left-0 right-0 z-[1000] p-2 pointer-events-none flex flex-col gap-2">
           {/* Header */}
-          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 fill-mode-both">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="h-10 w-10 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary">
                 <Target size={20} />
@@ -167,7 +193,7 @@ export default function TeacherLiveMap() {
                 setSearchQuery("");
                 setSelectedId(null);
               }}
-              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300 ${
                 !showActiveOnly && searchQuery === ""
                   ? "bg-brand-primary text-white border border-brand-primary"
                   : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
@@ -182,11 +208,12 @@ export default function TeacherLiveMap() {
                 setSearchQuery("");
                 setSelectedId(null);
               }}
-              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300 ${
                 showActiveOnly
                   ? "bg-emerald-500 text-white border border-emerald-500"
                   : "bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
               }`}
+              style={{ animationDelay: "100ms" }}
             >
               <CheckCircle2 size={14} />
               Active Sessions Only
@@ -197,21 +224,31 @@ export default function TeacherLiveMap() {
                   // Reset to first location or deselect
                   if (filteredZones.length > 0) {
                     setSelectedId(filteredZones[0].id);
+                    setUserLocation(null);
                   }
                 }}
-                className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted"
+                className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-card/80 backdrop-blur-md text-foreground border border-border hover:bg-muted animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300"
+                style={{ animationDelay: "200ms" }}
               >
                 <Target size={14} />
-                Center on Location
+                Center on Campus
               </button>
             )}
+            <button
+              onClick={handleLocateMe}
+              className="px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 bg-brand-primary text-brand-light border border-brand-primary/20 hover:bg-brand-primary/50 animate-in slide-in-from-left-4 duration-700 fill-mode-both hover:scale-105 active:scale-95 duration-300"
+              style={{ animationDelay: "300ms" }}
+            >
+              <Navigation size={14} />
+              My Location
+            </button>
           </div>
         </div>
 
         {/* No Results Overlay */}
         {filteredZones.length === 0 && zones.length > 0 && (
-          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="bg-card border border-border rounded-2xl shadow-lg p-8 text-center max-w-md mx-4">
+          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-500">
+            <div className="bg-card border border-border rounded-2xl shadow-lg p-8 text-center max-w-md mx-4 animate-in scale-in-95 slide-in-from-bottom-6 duration-500">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 mx-auto text-muted-foreground">
                 <Search size={32} />
               </div>
@@ -337,19 +374,6 @@ export default function TeacherLiveMap() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 bg-muted/30 border-t border-border">
-              <button className="w-full bg-brand-primary border-border hover:bg-muted text-brand-light p-3 rounded-xl text-sm font-bold shadow-sm transition-all flex justify-between items-center group">
-                <span className="flex items-center gap-2">
-                  <Settings size={16} /> Settings
-                </span>
-                <ChevronRight
-                  size={16}
-                  className="text-light group-hover:translate-x-1 transition-transform"
-                />
-              </button>
             </div>
           </>
         ) : (

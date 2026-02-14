@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         fullName: true,
         email: true,
         role: true,
+        profileImage: true,
       },
     });
 
@@ -80,6 +81,7 @@ export async function PUT(request: NextRequest) {
         fullName: true,
         email: true,
         role: true,
+        profileImage: true,
       },
     });
 

@@ -18,6 +18,7 @@ import {
   Trash,
   Clock,
   Loader2,
+  Search,
 } from "lucide-react";
 import {
   Popover,
@@ -85,6 +86,7 @@ export default function TeacherDashboardPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "students" | "analytics"
   >("overview");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [classes, setClasses] = useState<Class[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
@@ -298,42 +300,63 @@ export default function TeacherDashboardPage() {
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-brand-primary/30 pb-20">
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-brand-primary/30 pb-20 animate-in fade-in duration-700">
+      <main
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in slide-in-from-bottom-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         {/* Welcome & Action */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Dashboard
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              Welcome back, {user?.fullName || "Professor"}. Manage your
-              attendance securely.
-            </p>
+        <div
+          className="flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "200ms" }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                Dashboard
+              </h1>
+              <p className="mt-1 text-muted-foreground">
+                Welcome back, {user?.fullName || "Professor"}. Manage your
+                attendance securely.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingSessionId(null);
+                setNewSession({
+                  classId: "",
+                  className: "",
+                  room: "",
+                  date: new Date().toISOString().split("T")[0],
+                  startTime: "08:00",
+                  endTime: "10:00",
+                  radius: "50",
+                  lat: 11.5564,
+                  lng: 104.9282,
+                });
+                setIsCreatingClass(false);
+                setShowCustomization(false);
+                setIsModalOpen(true);
+              }}
+              className="w-full sm:w-auto group flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 active:scale-95 hover:scale-105 duration-300"
+            >
+              <Plus className="h-5 w-5" />
+              Launch Session
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setEditingSessionId(null);
-              setNewSession({
-                classId: "",
-                className: "",
-                room: "",
-                date: new Date().toISOString().split("T")[0],
-                startTime: "08:00",
-                endTime: "10:00",
-                radius: "50",
-                lat: 11.5564,
-                lng: 104.9282,
-              });
-              setIsCreatingClass(false);
-              setShowCustomization(false);
-              setIsModalOpen(true);
-            }}
-            className="w-full sm:w-auto group flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 active:scale-95"
+          <div
+            className="relative animate-in slide-in-from-right-8 duration-700 fill-mode-both"
+            style={{ animationDelay: "300ms" }}
           >
-            <Plus className="h-5 w-5" />
-            Launch Session
-          </button>
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 transition-colors duration-300" />
+            <input
+              type="text"
+              placeholder="Search classes by name, code, or room..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-300 hover:border-brand-primary/50 focus:-translate-y-1 focus:shadow-lg focus:shadow-brand-primary/10"
+            />
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -341,13 +364,14 @@ export default function TeacherDashboardPage() {
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md"
+              className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/30 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+              style={{ animationDelay: `${400 + idx * 100}ms` }}
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`rounded-xl p-2.5 ${stat.bgClass} ${stat.colorClass}`}
+                  className={`rounded-xl p-2.5 ${stat.bgClass} ${stat.colorClass} transition-transform duration-300 group-hover:scale-110`}
                 >
-                  <stat.icon className="h-5 w-5" />
+                  <stat.icon className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
                 </div>
                 {stat.title === "At Risk" && (
                   <span className="flex h-2 w-2">
@@ -371,7 +395,10 @@ export default function TeacherDashboardPage() {
         </div>
 
         {/* Tabs - added horizontal scroll for mobile */}
-        <div className="border-b border-border overflow-x-auto pb-2">
+        <div
+          className="border-b border-border overflow-x-auto pb-2 animate-in fade-in duration-700 fill-mode-both"
+          style={{ animationDelay: "700ms" }}
+        >
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {[
               { id: "overview", label: "Overview" },
@@ -381,11 +408,11 @@ export default function TeacherDashboardPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`
-                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all
+                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 hover:scale-105
                   ${
                     activeTab === tab.id
-                      ? "border-brand-primary text-brand-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                      ? "border-brand-primary text-brand-primary animate-in slide-in-from-top-4 duration-300"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
                   }
                 `}
               >
@@ -397,12 +424,12 @@ export default function TeacherDashboardPage() {
 
         {/* Tab Content */}
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 animate-in fade-in duration-500 fill-mode-both">
             <div className="lg:col-span-3 space-y-6">
-              <div className="rounded-2xl border border-border bg-card shadow-sm">
-                <div className="flex items-center justify-between border-b border-border p-6">
+              <div className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:border-brand-primary/20">
+                <div className="flex items-center justify-between border-b border-border p-6 bg-linear-to-r from-muted/50 to-transparent transition-all duration-300">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-brand-primary" />
+                    <Clock className="h-5 w-5 text-brand-primary transition-transform duration-300 group-hover:rotate-12 animate-pulse" />
                     <h3 className="font-semibold text-foreground">
                       Recent Activity
                     </h3>
@@ -410,9 +437,9 @@ export default function TeacherDashboardPage() {
                   <button
                     type="button"
                     onClick={() => router.push("/teacher/schedule")}
-                    className="text-sm font-medium text-brand-primary hover:underline"
+                    className="text-sm font-medium text-brand-primary hover:underline transition-all duration-300 hover:text-brand-primary/80 hover:translate-x-1"
                   >
-                    View Calendar
+                    View Calendar →
                   </button>
                 </div>
                 {recentSessions.length === 0 ? (
@@ -421,28 +448,55 @@ export default function TeacherDashboardPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {recentSessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="group flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="bg-emerald-100 text-emerald-600 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold shadow-sm">
-                            {session.title.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground">
-                              {session.title}
-                            </h4>
-                            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3.5 w-3.5" /> {session.time}
-                              </span>
+                    {recentSessions
+                      .filter(
+                        (session) =>
+                          session.title
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                          session.room
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase()),
+                      )
+                      .map((session) => (
+                        <div
+                          key={session.id}
+                          className="group flex flex-col gap-4 p-5 transition-all duration-300 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between hover:pl-8 animate-in slide-in-from-left-4 duration-500 fill-mode-both"
+                          style={{ animationDelay: `${100}ms` }}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="bg-emerald-100 text-emerald-600 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-6">
+                              {session.title.charAt(0)}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-foreground transition-colors duration-300 group-hover:text-brand-primary">
+                                {session.title}
+                              </h4>
+                              <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-125" />
+                                  {session.time}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
+                      ))}
+                    {recentSessions.filter(
+                      (session) =>
+                        session.title
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        session.room
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()),
+                    ).length === 0 && (
+                      <div className="p-8 text-center text-muted-foreground">
+                        {searchTerm
+                          ? "No sessions match your search."
+                          : "No active sessions."}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
@@ -450,7 +504,11 @@ export default function TeacherDashboardPage() {
           </div>
         )}
 
-        {activeTab === "students" && <StudentsList />}
+        {activeTab === "students" && (
+          <div className="animate-in fade-in duration-500">
+            <StudentsList />
+          </div>
+        )}
       </main>
 
       {/* Create Class Modal */}
@@ -475,14 +533,14 @@ export default function TeacherDashboardPage() {
         (editingSessionId || launching || !isCreatingClass) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-background/30 animate-in fade-in duration-200">
             <div
-              className="absolute inset-0 bg-foreground/20"
+              className="absolute inset-0 bg-foreground/20 animate-in fade-in duration-300"
               onClick={() => setIsModalOpen(false)}
             />
 
-            <div className="relative w-full max-w-full sm:max-w-2xl mx-4 overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-full sm:max-w-2xl mx-4 overflow-hidden rounded-3xl bg-background shadow-2xl ring-1 ring-border animate-in zoom-in-95 duration-400 slide-in-from-bottom-8">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-8 sm:py-6">
-                <div>
+              <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-8 sm:py-6 bg-linear-to-r from-brand-primary/5 to-transparent animate-in slide-in-from-top-4 duration-400">
+                <div className="animate-in slide-in-from-left-4 duration-400">
                   <h2 className="text-xl font-bold text-foreground">
                     {editingSessionId ? "Edit Session" : "Launch New Session"}
                   </h2>
@@ -494,20 +552,26 @@ export default function TeacherDashboardPage() {
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="rounded-full p-2 text-muted-foreground transition-all duration-300 hover:bg-muted hover:text-foreground hover:rotate-90 hover:scale-110 animate-in fade-in duration-500"
                 >
                   <X className="h-6 w-6" />
                 </button>
               </div>
 
-              <div className="max-h-[75vh] overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
+              <div
+                className="max-h-[75vh] overflow-y-auto px-4 py-4 sm:px-8 sm:py-6 animate-in fade-in slide-in-from-bottom-4 duration-400"
+                style={{ animationDelay: "200ms" }}
+              >
                 <form
                   id="session-form"
                   onSubmit={handleCreateSession}
                   className="space-y-6"
                 >
                   {/* Class Selection */}
-                  <div className="space-y-2">
+                  <div
+                    className="space-y-2 animate-in slide-in-from-left-4 duration-400 fill-mode-both"
+                    style={{ animationDelay: "300ms" }}
+                  >
                     <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Select Class <span className="text-red-500">*</span>
                     </label>
@@ -573,7 +637,10 @@ export default function TeacherDashboardPage() {
                         });
                       }}
                     >
-                      <SelectTrigger className="w-full rounded-xl border-border bg-card px-4 py-3 h-12 text-foreground shadow-sm transition-all focus:ring-2 focus:ring-brand-primary/20 outline-none">
+                      <SelectTrigger
+                        className="w-full rounded-xl border-border bg-card px-4 py-3 h-12 text-foreground shadow-sm transition-all focus:ring-2 focus:ring-brand-primary/20 outline-none hover:border-brand-primary/50 hover:shadow-md duration-300 animate-in slide-in-from-left-4 duration-400 fill-mode-both"
+                        style={{ animationDelay: "400ms" }}
+                      >
                         <SelectValue placeholder="Select a class..." />
                       </SelectTrigger>
 
@@ -703,7 +770,10 @@ export default function TeacherDashboardPage() {
 
                       {/* Time Details */}
                       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <div className="space-y-2">
+                        <div
+                          className="space-y-2 animate-in slide-in-from-left-4 duration-400 fill-mode-both"
+                          style={{ animationDelay: "400ms" }}
+                        >
                           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Start Time
                           </label>
@@ -716,10 +786,13 @@ export default function TeacherDashboardPage() {
                                 startTime: e.target.value,
                               })
                             }
-                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 hover:border-brand-primary/50 hover:shadow-md duration-300"
                           />
                         </div>
-                        <div className="space-y-2">
+                        <div
+                          className="space-y-2 animate-in slide-in-from-left-4 duration-400 fill-mode-both"
+                          style={{ animationDelay: "500ms" }}
+                        >
                           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             End Time
                           </label>
@@ -732,10 +805,13 @@ export default function TeacherDashboardPage() {
                                 endTime: e.target.value,
                               })
                             }
-                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 hover:border-brand-primary/50 hover:shadow-md duration-300"
                           />
                         </div>
-                        <div className="space-y-2">
+                        <div
+                          className="space-y-2 animate-in slide-in-from-left-4 duration-400 fill-mode-both"
+                          style={{ animationDelay: "600ms" }}
+                        >
                           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Date
                           </label>
@@ -748,7 +824,7 @@ export default function TeacherDashboardPage() {
                                 date: e.target.value,
                               })
                             }
-                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground shadow-sm outline-none ring-offset-2 transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 hover:border-brand-primary/50 hover:shadow-md duration-300"
                           />
                         </div>
                         <div className="space-y-2">
@@ -792,7 +868,7 @@ export default function TeacherDashboardPage() {
                             }
                           />
 
-                          <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
+                          <div className="pointer-events-none absolute bottom-3 left-3 z-400 rounded-lg bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
                             Selected: {newSession.lat.toFixed(5)},{" "}
                             {newSession.lng.toFixed(5)}
                           </div>
@@ -804,11 +880,11 @@ export default function TeacherDashboardPage() {
               </div>
 
               {/* Footer */}
-              <div className="flex gap-4 border-t border-border bg-muted/30 px-4 py-4 sm:px-8 sm:py-6">
+              <div className="flex gap-4 border-t border-border bg-muted/30 px-4 py-4 sm:px-8 sm:py-6 animate-in slide-in-from-bottom-4 duration-400">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-xl border border-border bg-background py-3.5 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                  className="flex-1 rounded-xl border border-border bg-background py-3.5 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground hover:scale-105 duration-300 active:scale-95"
                 >
                   Cancel
                 </button>
@@ -816,7 +892,7 @@ export default function TeacherDashboardPage() {
                   type="submit"
                   form="session-form"
                   disabled={launching}
-                  className="flex-1 rounded-xl bg-brand-primary py-3.5 font-bold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 rounded-xl bg-brand-primary py-3.5 font-bold text-white shadow-lg shadow-brand-primary/25 transition-all hover:bg-brand-primary/90 hover:shadow-brand-primary/40 hover:scale-105 duration-300 active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
                 >
                   {launching && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingSessionId ? "Update Session" : "Launch Session"}

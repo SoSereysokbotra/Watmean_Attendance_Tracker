@@ -146,6 +146,11 @@ export function StudentListTab({
                         Absent
                       </span>
                     )}
+                    {student.status === "pending" && (
+                      <span className="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                        Not Checked In
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
                     {student.checkInTime || "-"}

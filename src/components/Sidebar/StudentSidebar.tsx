@@ -107,6 +107,7 @@ export default function StudentSidebar({
     studentId?: string; // Change to optional
     student_id?: string; // Add student_id (optional, defensive)
     initials: string;
+    profileImage?: string;
   } | null>(null);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
@@ -153,12 +154,13 @@ export default function StudentSidebar({
     ? user.studentId || user.student_id || "Not Assigned"
     : "Loading...";
   const studentInitials = user?.initials || "..";
+  const profileImage = user?.profileImage;
 
   return (
     <aside
       className={`${
         isOpen ? "w-64" : "w-20"
-      } bg-brand-dark dark:bg-background h-screen fixed left-0 top-0 border-r border-border flex flex-col z-40 overflow-y-auto transition-all duration-300 ease-in-out`}
+      } bg-brand-dark dark:bg-background h-screen lg:h-full border-r border-border flex flex-col overflow-y-auto transition-all duration-300 ease-in-out`}
     >
       {/* Profile Area */}
       <div
@@ -168,9 +170,17 @@ export default function StudentSidebar({
       >
         {/* Profile Avatar */}
         <div className="relative shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-            {studentInitials}
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={studentName}
+              className="w-10 h-10 rounded-full object-cover border-2 border-brand-primary"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-purple-600 rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {studentInitials}
+            </div>
+          )}
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
         </div>
 

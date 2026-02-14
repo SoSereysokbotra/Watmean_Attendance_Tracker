@@ -9,12 +9,12 @@ import {
   MoreVertical,
   Plus,
   Search,
-  Trash,
   Users,
   Loader2,
   TrendingUp,
   ListFilter,
   Archive,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
@@ -25,7 +25,20 @@ import {
 } from "@/components/ui/popover";
 import Link from "next/link";
 import { CreateClassModal } from "@/components/teacher/CreateClassModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
+// --- Types ---
 interface Class {
   id: string;
   name: string;
@@ -40,6 +53,78 @@ interface Class {
   colorTheme?: string;
 }
 
+interface DeleteClassButtonProps {
+  id: string;
+  onDeleteSuccess: (id: string) => void;
+}
+
+// --- Specialized Components ---
+export function DeleteClassButton({
+  id,
+  onDeleteSuccess,
+}: DeleteClassButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/teacher/classes?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast.success("Class deleted successfully");
+        setOpen(false);
+        onDeleteSuccess(id);
+      } else {
+        toast.error("Failed to delete class");
+      }
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      toast.error("Something went wrong");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 h-9 px-2"
+        >
+          <Trash2 size={16} className="mr-2" />
+          Delete Class
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the class
+            and all associated student data.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? "Deleting..." : "Confirm Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+// --- Main Page ---
 export default function TeacherClassesPage() {
   const router = useRouter();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -59,16 +144,19 @@ export default function TeacherClassesPage() {
   const fetchClasses = async () => {
     try {
       const response = await fetch("/api/teacher/classes");
-      if (!response.ok) {
-        throw new Error("Failed to fetch classes");
-      }
+      if (!response.ok) throw new Error("Failed to fetch classes");
       const data = await response.json();
-      setClasses(data.classes);
+      setClasses(data.classes || []);
     } catch (error) {
       console.error("Error fetching classes:", error);
+      toast.error("Could not load classes");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOnDeleteSuccess = (id: string) => {
+    setClasses((prev) => prev.filter((c) => c.id !== id));
   };
 
   const filteredClasses = classes
@@ -85,37 +173,10 @@ export default function TeacherClassesPage() {
       return matchesSearch;
     })
     .sort((a, b) => {
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name);
-      }
-      if (sortBy === "progress") {
-        return (b.progress || 0) - (a.progress || 0);
-      }
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "progress") return (b.progress || 0) - (a.progress || 0);
       return 0;
     });
-
-  const deleteClass = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this class? This action cannot be undone.",
-      )
-    )
-      return;
-
-    try {
-      const response = await fetch(`/api/teacher/classes?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setClasses(classes.filter((c) => c.id !== id));
-      } else {
-        console.error("Failed to delete class");
-      }
-    } catch (error) {
-      console.error("Error deleting class:", error);
-    }
-  };
 
   const getStatusColor = (status: string = "active") => {
     switch (status) {
@@ -139,9 +200,12 @@ export default function TeacherClassesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div
+        className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <div>
           <h1 className="text-3xl font-bold text-foreground">My Classes</h1>
           <p className="text-muted-foreground mt-2">
@@ -149,117 +213,81 @@ export default function TeacherClassesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={16}
-            />
-            <Input
-              placeholder="Search classes..."
-              className="pl-10 w-full"
-              value={searchTerm}
-              onChange={(e) => {
-                const params = new URLSearchParams(window.location.search);
-                if (e.target.value) {
-                  params.set("search", e.target.value);
-                } else {
-                  params.delete("search");
-                }
-                router.replace(`?${params.toString()}`);
-              }}
-            />
-          </div>
+          {/* Filter Popover */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted hover:border-border/80 transition-all w-full sm:w-auto">
+              <Button variant="outline" className="gap-2">
                 <Filter size={18} /> Filters
-              </button>
+              </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-2" align="end">
               <div className="space-y-1">
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
                   Sort By
-                </div>
+                </p>
                 <Button
                   variant={sortBy === "name" ? "secondary" : "ghost"}
                   size="sm"
-                  className="w-full justify-start h-8 font-normal"
+                  className="w-full justify-start"
                   onClick={() => setSortBy("name")}
                 >
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Name (A-Z)
+                  <ListFilter className="mr-2 h-4 w-4" /> Name (A-Z)
                 </Button>
                 <Button
                   variant={sortBy === "progress" ? "secondary" : "ghost"}
                   size="sm"
-                  className="w-full justify-start h-8 font-normal"
+                  className="w-full justify-start"
                   onClick={() => setSortBy("progress")}
                 >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Progress (High-Low)
+                  <TrendingUp className="mr-2 h-4 w-4" /> Progress
                 </Button>
-
                 <div className="h-px bg-border my-1" />
-
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
                   Status
-                </div>
+                </p>
                 <Button
                   variant={filterType === "all" ? "secondary" : "ghost"}
                   size="sm"
-                  className="w-full justify-start h-8 font-normal"
+                  className="w-full justify-start"
                   onClick={() => setFilterType("all")}
                 >
-                  <ListFilter className="mr-2 h-4 w-4" />
                   All Courses
                 </Button>
                 <Button
                   variant={filterType === "active" ? "secondary" : "ghost"}
                   size="sm"
-                  className="w-full justify-start h-8 font-normal"
+                  className="w-full justify-start"
                   onClick={() => setFilterType("active")}
                 >
-                  <TrendingUp className="mr-2 h-4 w-4" />
                   Active
-                </Button>
-                <Button
-                  variant={filterType === "completed" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start h-8 font-normal"
-                  onClick={() => setFilterType("completed")}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Completed
                 </Button>
               </div>
             </PopoverContent>
           </Popover>
+
           <Button
-            className="bg-brand-primary hover:bg-brand-primary/90 w-full sm:w-auto"
+            className="bg-brand-primary hover:bg-brand-primary/90"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus size={16} className="mr-2" />
-            New Class
+            <Plus size={16} className="mr-2" /> New Class
           </Button>
         </div>
       </div>
 
-      {/* Classes Grid */}
+      {/* Grid Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClasses.map((cls) => (
+        {filteredClasses.map((cls, idx) => (
           <div
             key={cls.id}
-            className="bg-card rounded-2xl border border-border p-6 hover:border-brand-primary/30 hover:shadow-md transition-all"
+            className="bg-card rounded-2xl border border-border p-6 hover:border-brand-primary/30 hover:shadow-lg hover:scale-105 transition-all duration-300 hover:shadow-brand-primary/20 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+            style={{ animationDelay: `${200 + idx * 100}ms` }}
           >
             <div className="flex items-start justify-between mb-4">
               <div>
                 <span
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${getStatusColor(
-                    cls.status || "active",
-                  )}`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold ${getStatusColor(cls.status)}`}
                 >
-                  {(cls.status || "Active").charAt(0).toUpperCase() +
-                    (cls.status || "active").slice(1)}
+                  {cls.status?.toUpperCase() || "ACTIVE"}
                 </span>
                 <h3 className="font-bold text-xl text-foreground mt-2">
                   {cls.name}
@@ -272,15 +300,11 @@ export default function TeacherClassesPage() {
                     <MoreVertical size={20} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-40 p-1" align="end">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 h-9"
-                    onClick={() => deleteClass(cls.id)}
-                  >
-                    <Trash size={16} className="mr-2" />
-                    Delete Class
-                  </Button>
+                <PopoverContent className="w-44 p-1" align="end">
+                  <DeleteClassButton
+                    id={cls.id}
+                    onDeleteSuccess={handleOnDeleteSuccess}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -305,13 +329,13 @@ export default function TeacherClassesPage() {
             <div className="flex flex-col sm:flex-row gap-2">
               <Link
                 href={`/teacher/active?classId=${cls.id}`}
-                className="flex-1 py-2.5 text-center bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors text-sm"
+                className="flex-1 py-2 text-center bg-brand-primary text-white rounded-lg font-medium text-sm transition-all hover:bg-brand-primary/90 hover:scale-105 active:scale-95 duration-300"
               >
                 Take Attendance
               </Link>
               <Link
                 href={`/teacher/classes/${cls.id}`}
-                className="flex-1 py-2.5 text-center border border-border rounded-lg font-medium hover:bg-muted transition-colors text-sm"
+                className="flex-1 py-2 text-center border border-border rounded-lg font-medium text-sm transition-all hover:bg-muted hover:border-brand-primary/50 hover:scale-105 active:scale-95 duration-300"
               >
                 Details
               </Link>
@@ -321,28 +345,36 @@ export default function TeacherClassesPage() {
       </div>
 
       {/* Empty State */}
-      {filteredClasses.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="text-muted-foreground" size={24} />
+      {!loading && filteredClasses.length === 0 && (
+        <div className="text-center py-20 bg-muted/20 rounded-2xl border-2 border-dashed animate-in fade-in zoom-in-95 duration-500">
+          <div className="animate-in bounce duration-700 fill-mode-both">
+            <Calendar
+              className="mx-auto text-muted-foreground mb-4"
+              size={48}
+            />
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
+          <h3
+            className="text-lg font-medium animate-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+            style={{ animationDelay: "100ms" }}
+          >
             No classes found
           </h3>
-          <p className="text-muted-foreground mb-6">
-            Try adjusting your search or create a new class
+          <p
+            className="text-muted-foreground mb-6 animate-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+            style={{ animationDelay: "200ms" }}
+          >
+            Try adjusting your filters or create a new class.
           </p>
           <Button
-            className="bg-brand-primary hover:bg-brand-primary/90"
             onClick={() => setIsCreateModalOpen(true)}
+            className="animate-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+            style={{ animationDelay: "300ms" }}
           >
-            <Plus size={16} className="mr-2" />
-            Create Class
+            Create First Class
           </Button>
         </div>
       )}
 
-      {/* Create Class Modal */}
       <CreateClassModal
         isOpen={isCreateModalOpen}
         onClose={() => {

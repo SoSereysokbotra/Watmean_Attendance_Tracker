@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Globe } from "lucide-react";
+import { User, Globe, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { SettingsLayout } from "../../../../components/settings/SettingsLayout";
 import { ThemeSelectionCard } from "../../../../components/settings/ThemeSelectionCard";
 import {
@@ -12,6 +13,7 @@ import {
 export default function StudentSettingsView() {
   const [activeTab, setActiveTab] = useState("profile");
   const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -24,6 +26,8 @@ export default function StudentSettingsView() {
         }
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchUser();
@@ -33,6 +37,21 @@ export default function StudentSettingsView() {
     { id: "profile", label: "My Profile", icon: User },
     { id: "preferences", label: "Preferences", icon: Globe },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-4 border-border border-t-brand-primary animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm animate-pulse">
+            Loading your settings...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SettingsLayout
@@ -45,18 +64,16 @@ export default function StudentSettingsView() {
       {activeTab === "profile" && userData && (
         <UserProfileSettings
           role="Student"
-          userId={userData.studentId || "Not Assigned"}
+          userId={userData?.id || ""}
+          displayId={userData.studentId || "Not Assigned"}
           userData={{
             fullName: userData.name || userData.fullName || "",
             email: userData.email,
             phone: userData.phone || "",
             major: userData.major || "Computer Science",
+            profileImage: userData.profileImage,
           }}
           onSave={async (data: ProfileData) => {
-            // We can implement API call inside UserProfileSettings or here.
-            // If UserProfileSettings expects an onSave prop, we pass it.
-            // Assuming UserProfileSettings handles UI, we just need the API call.
-
             try {
               const response = await fetch("/api/student/settings", {
                 method: "PUT",
@@ -68,10 +85,10 @@ export default function StudentSettingsView() {
 
               // Optimistic update or refetch
               setUserData({ ...userData, ...data });
-              alert("Profile updated successfully!");
+              toast.success("Profile updated successfully!");
             } catch (err) {
               console.error(err);
-              alert("Failed to update profile.");
+              toast.error("Failed to update profile.");
             }
           }}
         />

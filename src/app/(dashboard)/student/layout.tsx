@@ -54,7 +54,7 @@ export default function StudentLayout({
       <div
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:block`}
+        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:block lg:h-screen lg:sticky lg:top-0`}
       >
         <StudentSidebar
           isOpen={isSidebarOpen}
@@ -63,11 +63,7 @@ export default function StudentLayout({
       </div>
 
       {/* Main Content Wrapper */}
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          isSidebarOpen ? "lg:ml-64" : "lg:ml-20"
-        }`}
-      >
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         {/* Top Header */}
         <header className="h-18 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -77,7 +73,7 @@ export default function StudentLayout({
             >
               <Menu size={20} />
             </button>
-            <h2 className="font-semibold text-lg capitalize text-foreground hidden sm:block">
+            <h2 className="font-semibold text-lg capitalize text-foreground">
               {getPageTitle(pathname)}
             </h2>
           </div>

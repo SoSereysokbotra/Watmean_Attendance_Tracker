@@ -1,99 +1,131 @@
 export const getVerificationEmailTemplate = (code: string): string => `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Verification</title>
+  <title>Verify Your Email</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      line-height: 1.6;
-      color: #333333;
-      background-color: #f4f6f8;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      color: #1f2937;
+      background-color: #f8fafc;
       margin: 0;
       padding: 0;
     }
-    .email-wrapper {
-      padding: 40px 20px;
+    .wrapper {
+      width: 100%;
+      padding: 48px 0;
+      background-color: #f8fafc;
     }
     .container {
       max-width: 500px;
       margin: 0 auto;
       background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
       overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     .header {
-      background-color: #007bff;
-      padding: 20px;
+      padding: 32px 40px 0;
       text-align: center;
     }
-    .header h2 {
-      margin: 0;
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 600;
+    .logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #FF5A36;
+      letter-spacing: -0.02em;
     }
     .content {
-      padding: 30px;
+      padding: 40px;
       text-align: center;
     }
-    .welcome-text {
-      font-size: 16px;
-      color: #555555;
-      margin-bottom: 25px;
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin: 24px 0 12px;
     }
-    .code-box {
-      background-color: #f0f8ff;
-      border: 1px dashed #007bff;
-      border-radius: 6px;
-      padding: 15px;
+    .description {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+    .code-container {
+      background-color: #fff9f8;
+      border: 2px solid #FF5A36;
+      border-radius: 12px;
+      padding: 24px;
       display: inline-block;
-      margin: 20px 0;
+      min-width: 200px;
     }
     .code {
-      font-size: 28px;
-      font-weight: 700;
-      color: #007bff;
-      letter-spacing: 6px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 36px;
+      font-weight: 800;
+      color: #FF5A36;
+      letter-spacing: 8px;
       margin: 0;
-      font-family: 'Courier New', Courier, monospace;
     }
-    .expiry {
-      font-size: 14px;
-      color: #888888;
-      margin-top: 15px;
+    .expiry-tag {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 6px 12px;
+      background-color: #f1f5f9;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
     }
     .footer {
-      background-color: #f9f9f9;
+      padding: 32px 40px;
       text-align: center;
+      border-top: 1px solid #f1f5f9;
+    }
+    .footer-text {
       font-size: 12px;
-      color: #999999;
-      padding: 20px;
-      border-top: 1px solid #eeeeee;
+      color: #94a3b8;
+      margin: 0;
+    }
+    @media only screen and (max-width: 500px) {
+      .content { padding: 32px 24px !important; }
     }
   </style>
 </head>
 <body>
-  <div class="email-wrapper">
+  <div class="wrapper">
     <div class="container">
       <div class="header">
-        <h2>Verify Your Email</h2>
+        <span class="logo-text">Watmean</span>
       </div>
+      
       <div class="content">
-        <p class="welcome-text">Hello,<br>Thank you for joining WatMean. To complete your registration, please verify your email address.</p>
+        <h1>Verify your email</h1>
+        <p class="description">
+          Thanks for joining Watmean! Please use the verification code below to secure your account.
+        </p>
         
-        <div class="code-box">
+        <div class="code-container">
           <div class="code">${code}</div>
         </div>
         
-        <p class="expiry">This code expires in <strong>5 minutes</strong>.</p>
-        <p style="font-size: 13px; color: #aaa; margin-top: 30px;">If you didn't request this, you can safely ignore this email.</p>
+        <br>
+        <div class="expiry-tag">
+          Expires in 5 minutes
+        </div>
+        
+        <p style="font-size: 13px; color: #94a3b8; margin-top: 40px;">
+          If you didn't request this code, you can safely ignore this message.
+        </p>
       </div>
+      
       <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} WatMean. All rights reserved.</p>
+        <p class="footer-text">
+          &copy; ${new Date().getFullYear()} Watmean Attendance Tracker<br>
+          Phnom Penh, Cambodia
+        </p>
       </div>
     </div>
   </div>

@@ -134,6 +134,7 @@ export async function POST(
       EmailService.sendClassInvitationEmail(email, {
         className: classData.name,
         classCode: classData.code, // Use teacher's subject code (e.g., "CS101") instead of auto-generated classCode
+        joinCode: classData.classCode || "UNKNOWN", // System Code
         teacherName: teacher?.fullName || "Your Teacher",
         schedule: classData.schedule || undefined,
         room: classData.room || undefined,

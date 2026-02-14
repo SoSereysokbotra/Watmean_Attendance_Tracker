@@ -99,9 +99,12 @@ export default function InviteTeacherPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 p-4 md:p-8 space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-muted/40 p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div>
+      <div
+        className="animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
           Invite Teacher
         </h1>
@@ -113,7 +116,10 @@ export default function InviteTeacherPage() {
 
       <div className="grid gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-3">
         {/* Invite Form - Left Column (Stacks on mobile, sticky on desktop) */}
-        <div className="lg:col-span-1">
+        <div
+          className="lg:col-span-1 animate-in slide-in-from-left-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm lg:sticky lg:top-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -170,7 +176,7 @@ export default function InviteTeacherPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-brand-primary text-light rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-brand-primary/90 focus:ring-4 focus:ring-brand-primary/20 shadow-lg shadow-brand-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none mt-2"
+                className="w-full bg-brand-primary text-light rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-brand-primary/90 focus:ring-4 focus:ring-brand-primary/20 shadow-lg shadow-brand-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none mt-2 hover:scale-105 active:scale-95 duration-300"
               >
                 {isLoading ? (
                   <>
@@ -189,9 +195,15 @@ export default function InviteTeacherPage() {
         </div>
 
         {/* Pending Invites List - Right Column */}
-        <div className="lg:col-span-2">
+        <div
+          className="lg:col-span-2 animate-in slide-in-from-right-8 duration-700 fill-mode-both"
+          style={{ animationDelay: "300ms" }}
+        >
           <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-            <div className="px-4 py-5 sm:px-6 sm:py-7 border-b border-border flex justify-between items-center bg-muted/30">
+            <div
+              className="px-4 py-5 sm:px-6 sm:py-7 border-b border-border flex justify-between items-center bg-muted/30 animate-in slide-in-from-top-4 duration-700 fill-mode-both"
+              style={{ animationDelay: "300ms" }}
+            >
               <h2 className="text-sm font-semibold text-foreground">
                 Invitation History
               </h2>
@@ -231,10 +243,11 @@ export default function InviteTeacherPage() {
                       </td>
                     </tr>
                   ) : (
-                    invitations.map((invite) => (
+                    invitations.map((invite, idx) => (
                       <tr
                         key={invite.id}
-                        className="group hover:bg-muted/50 transition-colors"
+                        className="group hover:bg-muted/50 transition-colors animate-in fade-in duration-500 fill-mode-both"
+                        style={{ animationDelay: `${350 + idx * 50}ms` }}
                       >
                         <td className="px-6 py-4 font-medium text-foreground whitespace-nowrap">
                           {invite.email}
@@ -280,7 +293,7 @@ export default function InviteTeacherPage() {
                                 onClick={() =>
                                   copyToClipboard(invite.token, invite.id)
                                 }
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border hover:scale-105 active:scale-95 duration-300 ${
                                   copiedId === invite.id
                                     ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
                                     : "bg-card text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
@@ -304,7 +317,7 @@ export default function InviteTeacherPage() {
                                 type="button"
                                 onClick={() => handleResend(invite.id)}
                                 disabled={resendingId === invite.id}
-                                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+                                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors disabled:opacity-50 hover:scale-110 active:scale-95 duration-300"
                                 title="Resend Invitation Email"
                               >
                                 {resendingId === invite.id ? (
