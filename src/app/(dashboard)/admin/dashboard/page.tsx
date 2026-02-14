@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Users, Mail, UserCheck, ArrowRight, Plus, Search } from "lucide-react";
 import Link from "next/link";
 
-export default function AdminDashboardPage() {
+function AdminDashboardContent() {
   const [stats, setStats] = useState({
     totalUsers: 0,
     pendingInvites: 0,
@@ -186,5 +186,13 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-muted/40 p-6 md:p-8 flex items-center justify-center">Loading...</div>}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }
