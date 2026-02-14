@@ -2,38 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react";
 import AdminSidebar from "@/components/Sidebar/AdminSidebar";
-import { Search, Menu, X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-
-function SearchInput() {
-  const router = useRouter();
-  const { useSearchParams } = require("next/navigation");
-  const searchParams = useSearchParams();
-
-  return (
-    <div className="relative hidden sm:block">
-      <Search
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-        size={16}
-      />
-      <input
-        type="text"
-        placeholder="Search..."
-        defaultValue={searchParams.get("search") || ""}
-        onChange={(e) => {
-          const params = new URLSearchParams(window.location.search);
-          if (e.target.value) {
-            params.set("search", e.target.value);
-          } else {
-            params.delete("search");
-          }
-          router.replace(`?${params.toString()}`);
-        }}
-        className="pl-9 pr-4 py-2 bg-muted border-none rounded-full text-sm focus:ring-2 focus:ring-brand-primary/20 focus:bg-card outline-none w-64 transition-colors"
-      />
-    </div>
-  );
-}
+import AdminSearch from "@/components/admin/AdminSearch";
+import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -82,7 +53,7 @@ export default function AdminLayout({
       <div
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:block lg:h-screen lg:sticky lg:top-0`}
+        } fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:block lg:h-screen lg:sticky lg:top-0`}
       >
         <AdminSidebar
           isOpen={isSidebarOpen}
@@ -107,9 +78,7 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <Suspense fallback={<div className="w-64 h-10" />}>
-              <SearchInput />
-            </Suspense>
+            <AdminSearch />
           </div>
         </header>
 
