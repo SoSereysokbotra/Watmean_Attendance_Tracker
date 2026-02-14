@@ -191,7 +191,13 @@ function AdminDashboardContent() {
 
 export default function AdminDashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-muted/40 p-6 md:p-8 flex items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-muted/40 p-6 md:p-8 flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
       <AdminDashboardContent />
     </Suspense>
   );

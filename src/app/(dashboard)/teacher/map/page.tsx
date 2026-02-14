@@ -150,7 +150,7 @@ export default function TeacherLiveMap() {
         />
 
         {/* Floating Overlay Container */}
-        <div className="absolute top-0 left-0 right-0 z-[1000] p-2 pointer-events-none flex flex-col gap-2">
+        <div className="absolute top-0 left-0 right-0 z-100 p-2 pointer-events-none flex flex-col gap-2">
           {/* Header */}
           <div className="pointer-events-auto bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 fill-mode-both">
             <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -247,7 +247,7 @@ export default function TeacherLiveMap() {
 
         {/* No Results Overlay */}
         {filteredZones.length === 0 && zones.length > 0 && (
-          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="absolute inset-0 z-999 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-500">
             <div className="bg-card border border-border rounded-2xl shadow-lg p-8 text-center max-w-md mx-4 animate-in scale-in-95 slide-in-from-bottom-6 duration-500">
               <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4 mx-auto text-muted-foreground">
                 <Search size={32} />
@@ -278,7 +278,7 @@ export default function TeacherLiveMap() {
           Right: Sidebar Details (Mobile Bottom Sheet / Desktop Sidebar)
       --------------------------------------------------------- */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t border-border shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:static md:w-[320px] lg:w-[360px] md:border-l md:border-t-0 md:shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] md:flex md:flex-col md:z-20 md:transform-none ${
+        className={`fixed inset-x-0 bottom-0 z-50 bg-card border-t border-border shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:static md:w-[320px] lg:w-360px md:border-l md:border-t-0 md:shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] md:flex md:flex-col md:z-20 md:transform-none ${
           selectedZone ? "translate-y-0" : "translate-y-full md:translate-y-0"
         }`}
         style={{ maxHeight: "60vh" }} // Limit height on mobile

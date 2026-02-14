@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
+      <div className="flex justify-center items-center min-h-400px">
         <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
       </div>
     );
@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
+      <div className="flex flex-col items-center justify-center min-h-400px text-muted-foreground">
         <AlertTriangle className="h-10 w-10 mb-4 text-destructive" />
         <p>{error || "No data available"}</p>
         <button

@@ -213,7 +213,7 @@ export default function InviteTeacherPage() {
             </div>
 
             <div className="overflow-x-auto w-full">
-              <table className="w-full text-left text-sm min-w-[600px]">
+              <table className="w-full text-left text-sm min-w-96">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
                     <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">

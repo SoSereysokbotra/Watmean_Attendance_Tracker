@@ -286,7 +286,7 @@ export default function SchedulePage() {
                     className="group relative flex gap-4 md:gap-6 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
                     style={{ animationDelay: `${200 + index * 100}ms` }}
                   >
-                    <div className="w-20 md:w-24 pt-5 flex flex-col items-end text-right flex-shrink-0">
+                    <div className="w-20 md:w-24 pt-5 flex flex-col items-end text-right shrink-0">
                       <span className="text-base font-bold text-foreground leading-none">
                         {session.startTime.split(" ")[0]}
                       </span>

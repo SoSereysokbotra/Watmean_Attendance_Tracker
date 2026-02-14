@@ -273,7 +273,7 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="w-full text-left border-collapse min-w-800px">
               <thead className="bg-muted/30 border-b border-border">
                 <tr>
                   <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">

@@ -237,7 +237,7 @@ export default function ReportsPage() {
             Weekly Trend (Last 7 Days)
           </h3>
           <div
-            className="h-[250px] sm:h-[300px] w-full min-w-0 animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+            className="h-250px sm:h-300px w-full min-w-0 animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
             style={{ animationDelay: "600ms" }}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -310,7 +310,7 @@ export default function ReportsPage() {
             Class Performance
           </h3>
           <div
-            className="h-[250px] sm:h-[300px] w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
+            className="h-250px sm:h-300px w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
             style={{ animationDelay: "800ms" }}
           >
             <ResponsiveContainer width="100%" height="100%">

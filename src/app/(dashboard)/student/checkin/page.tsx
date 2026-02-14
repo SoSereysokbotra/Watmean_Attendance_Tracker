@@ -152,7 +152,7 @@ function LiveMapViewContent() {
   // Show loading state while fetching session
   if (loadingSession) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] animate-in fade-in duration-500">
+      <div className="flex items-center justify-center min-h-96 animate-in fade-in duration-500">
         <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
       </div>
     );
@@ -199,7 +199,7 @@ function LiveMapViewContent() {
 
         {/* Loading Overlay */}
         {!position && !error && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-500 flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
             <Loader2 className="animate-spin text-brand-primary" size={32} />
             <p className="text-sm font-medium text-muted-foreground">
               Acquiring GPS Signal...
@@ -209,7 +209,7 @@ function LiveMapViewContent() {
 
         {/* Success Overlay */}
         {success && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[500] flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-500 flex items-center justify-center flex-col gap-3 animate-in fade-in duration-500">
             <div
               className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-4 animate-in scale-in-95 duration-500 fill-mode-both"
               style={{ animationDelay: "100ms" }}
@@ -240,14 +240,14 @@ function LiveMapViewContent() {
 
         {/* Error Overlay (if checkin fail) */}
         {error && !success && position && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-rose-50 dark:bg-rose-900/90 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-200 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-top-4 duration-500 fill-mode-both">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-1000 bg-rose-50 dark:bg-rose-900/90 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-200 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-top-4 duration-500 fill-mode-both">
             {error}
           </div>
         )}
 
         {/* Top Bar */}
         <div
-          className="absolute top-0 left-0 right-0 p-0.5 z-[1000] animate-in slide-in-from-top-4 duration-700 fill-mode-both"
+          className="absolute top-0 left-0 right-0 p-0.5 z-1000 animate-in slide-in-from-top-4 duration-700 fill-mode-both"
           style={{ animationDelay: "100ms" }}
         >
           <div className="bg-card/80 backdrop-blur-md rounded-xl border border-border shadow-sm p-3">
@@ -283,7 +283,7 @@ function LiveMapViewContent() {
 
       {/* Bottom Bar */}
       <div
-        className="bg-card p-4 border-t border-border flex justify-between items-center z-[1000] animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
+        className="bg-card p-4 border-t border-border flex justify-between items-center z-1000 animate-in slide-in-from-bottom-6 duration-700 fill-mode-both"
         style={{ animationDelay: "200ms" }}
       >
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
